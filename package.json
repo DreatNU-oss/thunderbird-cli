@@ -12,6 +12,9 @@
   "scripts": {
     "test": "node test/quick-test.mjs",
     "test:mcp": "node test/mcp-test.mjs",
+    "test:ponte": "node test/ponte-auth-test.mjs",
+    "test:tudo": "npm test && npm run test:mcp && npm run test:ponte",
+    "token": "node scripts/gerar-token.mjs",
     "bridge": "node bridge/bridge.js",
     "tb": "node cli/src/cli.js",
     "build:xpi": "node scripts/build-xpi.mjs"
