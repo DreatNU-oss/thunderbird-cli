@@ -12,6 +12,11 @@ const PORT = 19700;
 const WS_PORT = 19701;
 let passed = 0, failed = 0;
 
+// Respostas das travas pessoais — iguais às de extension/src/background.js.
+const BLOQUEIO_ENVIO = { error: "ENVIO_BLOQUEADO: esta versão nunca envia e-mail sozinha.", code: "ENVIO_BLOQUEADO" };
+const BLOQUEIO_PERMANENTE = { error: "EXCLUSAO_PERMANENTE_BLOQUEADA: esta versão nunca apaga em definitivo.", code: "EXCLUSAO_PERMANENTE_BLOQUEADA" };
+const BLOQUEIO_PASTA = { error: "EXCLUSAO_DE_PASTA_BLOQUEADA: esta versão nunca apaga pastas.", code: "EXCLUSAO_DE_PASTA_BLOQUEADA" };
+
 function handle({ method, path, body }) {
   if (path === "/health") return { status: "ok", version: "2.0.0", thunderbird: true };
   if (path === "/accounts") return [{ id: "acct1", name: "Test", type: "imap", identities: [{ id: "id1", email: "t@t.com", name: "T" }], rootFolder: { id: "rf", name: "" } }];
@@ -21,7 +26,7 @@ function handle({ method, path, body }) {
   if (path === "/folders/info") return { id: body?.folderId, name: "Inbox", type: "inbox", unreadMessageCount: 5, totalMessageCount: 50 };
   if (path === "/folders/create") return { success: true, folder: { id: "fn", name: body?.name } };
   if (path === "/folders/rename") return { success: true, folder: { id: body?.folderId, name: body?.newName } };
-  if (path === "/folders/delete") return { success: true };
+  if (path === "/folders/delete") return BLOQUEIO_PASTA;
   if (path === "/messages/search") return { messages: [{ id: 1, subject: "Test", author: "a@b.com", date: "2026-04-01", read: false, flagged: false, junk: false, size: 100, tags: [], folder: { accountId: "acct1", path: "/Inbox" } }], total: 1 };
   if (path === "/messages/list") return { messages: [{ id: 1, subject: "Test", author: "a@b.com", date: "2026-04-01", read: false, flagged: false, junk: false, size: 100, tags: ["$l1"], folder: { accountId: "acct1", path: "/Inbox" } }], total: 1 };
   if (path === "/messages/read-batch") return (body?.messageIds || []).map(id => ({ id, subject: "T", parts: { text: "Hello" } }));
@@ -29,7 +34,7 @@ function handle({ method, path, body }) {
   if (path === "/messages/archive") return { success: true, archived: (body?.messageIds || []).length };
   if (path === "/messages/move") return { success: true, moved: (body?.messageIds || []).length };
   if (path === "/messages/copy") return { success: true, copied: (body?.messageIds || []).length };
-  if (path === "/messages/delete") return { success: true, deleted: (body?.messageIds || []).length };
+  if (path === "/messages/delete") return body?.permanent ? BLOQUEIO_PERMANENTE : { success: true, deleted: (body?.messageIds || []).length, destino: "Lixeira" };
   if (path === "/messages/update") return { success: true };
   if (path?.match(/\/raw$/)) return { raw: "From: a@b\nSubject: T\n\nBody" };
   if (path?.match(/\/headers$/)) return { id: 1, subject: "T", author: "a@b" };
@@ -42,9 +47,10 @@ function handle({ method, path, body }) {
   if (path?.match(/^\/messages\/\d+$/) && method === "GET") return { id: 1, subject: "T", author: "a@b", date: "2026-04-01", read: false, flagged: false, junk: false, size: 100, tags: ["$l1"], folder: null, parts: { text: "Hello world", html: "", attachments: [] } };
   if (path === "/tags") return [{ key: "$l1", tag: "Important", color: "#FF0000" }];
   if (path === "/tags/create") return { success: true, ...body };
-  if (path === "/compose") return { success: true, action: body?.send ? "sent" : body?.open ? "draft_opened" : "draft_saved" };
-  if (path === "/reply") return { success: true, action: body?.send ? "sent" : "draft_saved" };
-  if (path === "/forward") return { success: true, action: body?.send ? "sent" : "draft_saved" };
+  // A ponte simulada espelha as travas pessoais de extension/src/background.js.
+  if (path === "/compose") return body?.send ? BLOQUEIO_ENVIO : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
+  if (path === "/reply") return body?.send ? BLOQUEIO_ENVIO : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
+  if (path === "/forward") return body?.send ? BLOQUEIO_ENVIO : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
   if (path === "/stats") return { totalAccounts: 1, totalUnread: 5, totalMessages: 100, accounts: [] };
   if (path === "/recent") return { messages: [], total: 0, since: new Date().toISOString() };
   if (path === "/contacts/search") return [{ id: "c1", name: "John", email: "j@e.com" }];
@@ -136,7 +142,6 @@ console.log("\n\x1b[1mFolders\x1b[0m");
 test("POST /folders/info", await httpCall("POST", "/folders/info", { folderId: "f1" }), r => r.name === "Inbox");
 test("POST /folders/create", await httpCall("POST", "/folders/create", { parentFolderId: "f1", name: "New" }), r => r.success);
 test("POST /folders/rename", await httpCall("POST", "/folders/rename", { folderId: "f1", newName: "X" }), r => r.success);
-test("POST /folders/delete", await httpCall("POST", "/folders/delete", { folderId: "f1" }), r => r.success);
 
 console.log("\n\x1b[1mSearch & List\x1b[0m");
 test("POST /messages/search", await httpCall("POST", "/messages/search", { query: "test", limit: 25 }), r => r.messages?.length >= 0);
@@ -168,10 +173,17 @@ test("POST /tags/create", await httpCall("POST", "/tags/create", { key: "k", tag
 
 console.log("\n\x1b[1mCompose\x1b[0m");
 test("POST /compose draft", await httpCall("POST", "/compose", { to: "a@b", subject: "T", body: "Hi" }), r => r.success && r.action === "draft_saved");
-test("POST /compose send", await httpCall("POST", "/compose", { to: "a@b", body: "Hi", send: true }), r => r.action === "sent");
 test("POST /compose open", await httpCall("POST", "/compose", { to: "a@b", body: "Hi", open: true }), r => r.action === "draft_opened");
 test("POST /reply", await httpCall("POST", "/reply", { messageId: 1, body: "Thanks" }), r => r.success);
 test("POST /forward", await httpCall("POST", "/forward", { messageId: 1, to: "c@d", body: "FYI" }), r => r.success);
+
+console.log("\n\x1b[1mTravas pessoais (Fase 4)\x1b[0m");
+test("envio direto bloqueado no compose", await httpCall("POST", "/compose", { to: "a@b", body: "Hi", send: true }), r => r.code === "ENVIO_BLOQUEADO" && !r.success);
+test("envio direto bloqueado no reply", await httpCall("POST", "/reply", { messageId: 1, body: "Hi", send: true }), r => r.code === "ENVIO_BLOQUEADO" && !r.success);
+test("envio direto bloqueado no forward", await httpCall("POST", "/forward", { messageId: 1, to: "c@d", send: true }), r => r.code === "ENVIO_BLOQUEADO" && !r.success);
+test("exclusao permanente bloqueada", await httpCall("POST", "/messages/delete", { messageIds: [1], permanent: true }), r => r.code === "EXCLUSAO_PERMANENTE_BLOQUEADA" && !r.success);
+test("delete normal vai para a Lixeira", await httpCall("POST", "/messages/delete", { messageIds: [1] }), r => r.success && r.destino === "Lixeira");
+test("exclusao de pasta bloqueada", await httpCall("POST", "/folders/delete", { folderId: "f1" }), r => r.code === "EXCLUSAO_DE_PASTA_BLOQUEADA" && !r.success);
 
 console.log("\n\x1b[1mStats & Recent\x1b[0m");
 test("GET /stats", await httpCall("GET", "/stats"), r => r.totalAccounts === 1);

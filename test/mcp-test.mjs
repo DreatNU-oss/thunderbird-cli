@@ -113,13 +113,19 @@ function handle({ method, path, body }) {
   if (path?.match(/\/attachment$/) && method === "POST")
     return { name: "f.pdf", size: 5000, contentType: "application/pdf", data: "SGVsbG8=" };
   if (path === "/messages/move") return { success: true, moved: (body?.messageIds || []).length };
-  if (path === "/messages/delete") return { success: true, deleted: (body?.messageIds || []).length };
+  // A ponte simulada espelha as travas pessoais de extension/src/background.js.
+  if (path === "/messages/delete")
+    return body?.permanent
+      ? { error: "EXCLUSAO_PERMANENTE_BLOQUEADA", code: "EXCLUSAO_PERMANENTE_BLOQUEADA" }
+      : { success: true, deleted: (body?.messageIds || []).length, destino: "Lixeira" };
+  if (path === "/folders/delete")
+    return { error: "EXCLUSAO_DE_PASTA_BLOQUEADA", code: "EXCLUSAO_DE_PASTA_BLOQUEADA" };
   if (path === "/messages/archive") return { success: true, archived: (body?.messageIds || []).length };
   if (path === "/messages/update") return { success: true };
-  if (path === "/compose")
-    return { success: true, action: body?.send ? "sent" : body?.open ? "draft_opened" : "draft_saved" };
-  if (path === "/reply") return { success: true, action: body?.send ? "sent" : "draft_saved" };
-  if (path === "/forward") return { success: true, action: body?.send ? "sent" : "draft_saved" };
+  if (path === "/compose" || path === "/reply" || path === "/forward")
+    return body?.send
+      ? { error: "ENVIO_BLOQUEADO", code: "ENVIO_BLOQUEADO" }
+      : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
   if (path === "/stats")
     return { totalAccounts: 1, totalUnread: 5, totalMessages: 100, accounts: [] };
   if (path === "/sync") return { success: true, synced: body?.all ? "all" : body?.folderId };
@@ -259,6 +265,13 @@ class McpClient {
     return r.result?.tools || [];
   }
 
+  // Devolve o inputSchema de uma ferramenta — usado para provar que as
+  // opções perigosas sumiram do catálogo que o agente enxerga.
+  async listToolSchema(name) {
+    const tools = await this.listTools();
+    return tools.find((t) => t.name === name)?.inputSchema;
+  }
+
   async callTool(name, args) {
     const r = await this.send("tools/call", { name, arguments: args });
     if (r.result?.content?.[0]?.text) {
@@ -388,9 +401,9 @@ test(
   (r) => r.success && r.action === "draft_saved"
 );
 test(
-  "email_compose send",
+  "email_compose send BLOQUEADO",
   await client.callTool("email_compose", { to: "a@b.com", body: "Hi", mode: "send" }),
-  (r) => r.action === "sent"
+  (r) => r.code === "ENVIO_BLOQUEADO" && !r.success
 );
 test(
   "email_compose open",
@@ -404,9 +417,14 @@ test(
   (r) => r.success
 );
 test(
-  "email_reply --send",
+  "email_reply send BLOQUEADO",
   await client.callTool("email_reply", { messageId: 1, body: "Thanks", mode: "send" }),
-  (r) => r.action === "sent"
+  (r) => r.code === "ENVIO_BLOQUEADO" && !r.success
+);
+test(
+  "email_forward send BLOQUEADO",
+  await client.callTool("email_forward", { messageId: 1, to: "c@d.com", mode: "send" }),
+  (r) => r.code === "ENVIO_BLOQUEADO" && !r.success
 );
 
 test(
@@ -446,13 +464,24 @@ test(
   (r) => r.success
 );
 test(
-  "email_archive permanent delete without confirm",
+  "email_archive exclusao permanente BLOQUEADA (mesmo com confirm)",
   await client.callTool("email_archive", {
     messageIds: [1],
     operation: "delete",
     permanent: true,
+    confirm: true,
   }),
-  (r) => r.error?.includes("confirm")
+  (r) => r.code === "EXCLUSAO_PERMANENTE_BLOQUEADA" && !r.success
+);
+test(
+  "email_archive nao expoe mais 'permanent' nem 'confirm' no schema",
+  await client.listToolSchema("email_archive"),
+  (s) => !s.properties.permanent && !s.properties.confirm
+);
+test(
+  "email_compose nao expoe mais o modo 'send' no schema",
+  await client.listToolSchema("email_compose"),
+  (s) => !s.properties.mode.enum.includes("send")
 );
 
 test(

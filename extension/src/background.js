@@ -9,6 +9,48 @@
 const WS_URL = "ws://127.0.0.1:7701";
 const RECONNECT_DELAY = 3000;
 
+// ─── Travas pessoais ────────────────────────────────────────────────
+//
+// Esta é uma versão pessoal e modificada da extensão. Duas operações
+// foram removidas de propósito e NÃO devem voltar:
+//
+//   1. Enviar e-mail direto. Toda mensagem vira rascunho, para revisão
+//      humana no Thunderbird. A permissão "compose.send" também foi
+//      retirada do manifest.json, então o próprio Thunderbird recusa
+//      enviar mesmo que este código seja alterado.
+//
+//   2. Apagar permanentemente. Todo apagar move para a Lixeira.
+//
+// Estas travas ficam aqui, na extensão, porque este é o último ponto
+// antes do Thunderbird agir — a ponte e o servidor MCP podem ser
+// contornados por outro programa da máquina, esta camada não.
+//
+// Contexto: AUDITORIA.md na raiz do repositório.
+
+const ERRO_ENVIO_BLOQUEADO = {
+  error:
+    "ENVIO_BLOQUEADO: esta versão nunca envia e-mail sozinha. Nada foi " +
+    "enviado nem salvo. Repita sem o modo de envio: a mensagem será salva " +
+    "em Rascunhos para você revisar e enviar pelo Thunderbird.",
+  code: "ENVIO_BLOQUEADO",
+};
+
+const ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA = {
+  error:
+    "EXCLUSAO_PERMANENTE_BLOQUEADA: esta versão nunca apaga em definitivo. " +
+    "Nada foi apagado. Repita sem pedir exclusão permanente: a mensagem vai " +
+    "para a Lixeira, de onde você consegue recuperá-la.",
+  code: "EXCLUSAO_PERMANENTE_BLOQUEADA",
+};
+
+const ERRO_EXCLUSAO_DE_PASTA_BLOQUEADA = {
+  error:
+    "EXCLUSAO_DE_PASTA_BLOQUEADA: esta versão nunca apaga pastas, porque " +
+    "isso levaria junto todas as mensagens dentro delas. Nada foi apagado. " +
+    "Se você realmente quer apagar esta pasta, faça pelo Thunderbird.",
+  code: "EXCLUSAO_DE_PASTA_BLOQUEADA",
+};
+
 let ws = null;
 let reconnectTimer = null;
 
@@ -162,10 +204,10 @@ async function handleRequest({ method, path, body }) {
   }
 
   if (path === "/folders/delete" && method === "POST") {
-    const { folderId } = body || {};
-    const folder = await messenger.folders.get(folderId, false);
-    await messenger.folders.delete(folder);
-    return { success: true };
+    // Trava pessoal: apagar uma pasta inteira é a operação mais destrutiva
+    // do conjunto — leva junto todas as mensagens dentro dela. Nesta versão
+    // ela não existe. Para apagar uma pasta, use o próprio Thunderbird.
+    return ERRO_EXCLUSAO_DE_PASTA_BLOQUEADA;
   }
 
   // ─── Search ─────────────────────────────────────────────────────
@@ -299,9 +341,15 @@ async function handleRequest({ method, path, body }) {
   // ─── Delete ─────────────────────────────────────────────────────
 
   if (path === "/messages/delete" && method === "POST") {
-    const { messageIds, permanent = false } = body;
-    await messenger.messages.delete(messageIds, permanent);
-    return { success: true, deleted: messageIds.length };
+    const { messageIds, permanent } = body;
+    // Trava pessoal: exclusão permanente não existe nesta versão.
+    // Pedir por ela falha de forma visível e não apaga nada — em vez de
+    // ser convertida em silêncio numa exclusão comum, que esconderia do
+    // usuário que a intenção original era destruir a mensagem.
+    if (permanent) return ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA;
+    // O segundo argumento é fixo em `false` = mover para a Lixeira.
+    await messenger.messages.delete(messageIds, false);
+    return { success: true, deleted: messageIds.length, destino: "Lixeira" };
   }
 
   // ─── Update (mark read/flagged/junk/tags) ───────────────────────
@@ -453,6 +501,7 @@ async function handleRequest({ method, path, body }) {
     const { to, cc, bcc, subject, body: msgBody, isHTML = false,
             identityId, send = false, draft = false, open = false,
             priority } = body;
+    if (send) return ERRO_ENVIO_BLOQUEADO;   // trava pessoal — nem abre a janela
     const details = {};
     if (to) details.to = Array.isArray(to) ? to : [to];
     if (cc) details.cc = Array.isArray(cc) ? cc : [cc];
@@ -463,10 +512,6 @@ async function handleRequest({ method, path, body }) {
     if (identityId) details.identityId = identityId;
     if (priority) details.customHeaders = [{ name: "X-Priority", value: priorityToValue(priority) }];
     const tab = await messenger.compose.beginNew(null, details);
-    if (send) {
-      await messenger.compose.sendMessage(tab.id, { mode: "sendNow" });
-      return { success: true, action: "sent" };
-    }
     if (open) {
       return { success: true, action: "draft_opened", tabId: tab.id };
     }
@@ -481,14 +526,11 @@ async function handleRequest({ method, path, body }) {
   if (path === "/reply" && method === "POST") {
     const { messageId, body: replyBody, replyAll = false,
             send = false, draft = false, open = false } = body;
+    if (send) return ERRO_ENVIO_BLOQUEADO;   // trava pessoal — nem abre a janela
     const type = replyAll ? "replyToAll" : "replyToSender";
     const tab = await messenger.compose.beginReply(messageId, type, {
       isPlainText: true, plainTextBody: replyBody,
     });
-    if (send) {
-      await messenger.compose.sendMessage(tab.id, { mode: "sendNow" });
-      return { success: true, action: "sent" };
-    }
     if (open) {
       return { success: true, action: "draft_opened", tabId: tab.id };
     }
@@ -503,14 +545,11 @@ async function handleRequest({ method, path, body }) {
   if (path === "/forward" && method === "POST") {
     const { messageId, to, body: fwdBody,
             send = false, draft = false, open = false } = body;
+    if (send) return ERRO_ENVIO_BLOQUEADO;   // trava pessoal — nem abre a janela
     const tab = await messenger.compose.beginForward(
       messageId, "forwardAsAttachment",
       { to: Array.isArray(to) ? to : [to], isPlainText: true, plainTextBody: fwdBody || "" }
     );
-    if (send) {
-      await messenger.compose.sendMessage(tab.id, { mode: "sendNow" });
-      return { success: true, action: "sent" };
-    }
     if (open) {
       return { success: true, action: "draft_opened", tabId: tab.id };
     }

@@ -12,6 +12,28 @@
 
 import { parseRelativeDate } from "./client.js";
 
+// ─── Travas pessoais ────────────────────────────────────────────────
+//
+// Versão pessoal: enviar e-mail direto e apagar em definitivo não existem.
+// Estas travas são a primeira barreira, para o agente receber um erro claro
+// e nem chegar a tentar. A barreira final está em extension/src/background.js,
+// que é o último ponto antes do Thunderbird agir. Ver AUDITORIA.md.
+
+const ERRO_ENVIO_BLOQUEADO = {
+  error:
+    "ENVIO_BLOQUEADO: esta versão nunca envia e-mail sozinha. Nada foi " +
+    "enviado. Refaça a chamada sem mode='send': a mensagem será salva em " +
+    "Rascunhos, e o André revisa e envia pelo Thunderbird.",
+  code: "ENVIO_BLOQUEADO",
+};
+
+const ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA = {
+  error:
+    "EXCLUSAO_PERMANENTE_BLOQUEADA: esta versão nunca apaga em definitivo. " +
+    "Nada foi apagado. Refaça sem 'permanent': a mensagem vai para a Lixeira.",
+  code: "EXCLUSAO_PERMANENTE_BLOQUEADA",
+};
+
 export const tools = [
   // ─── 1. Stats ──────────────────────────────────────────────────
   {
@@ -206,7 +228,7 @@ export const tools = [
   {
     name: "email_compose",
     description:
-      "Compose a new email. Default mode is 'draft' (saved to Drafts folder, not sent). Use mode='send' to send immediately, mode='open' to open in Thunderbird's compose window for human review. ALWAYS prefer draft mode unless the human explicitly asked to send.",
+      "Compose a new email. This build CANNOT send: every message becomes a draft for the human to review and send from Thunderbird. mode='draft' (default) saves silently to Drafts; mode='open' opens the compose window. There is no send mode — do not offer to send, and tell the user the draft is waiting in Drafts.",
     inputSchema: {
       type: "object",
       properties: {
@@ -234,8 +256,8 @@ export const tools = [
         },
         mode: {
           type: "string",
-          enum: ["draft", "open", "send"],
-          description: "draft (default, saves silently), open (compose window), send (immediate)",
+          enum: ["draft", "open"],
+          description: "draft (default, saves silently) or open (compose window). Sending is not available in this build.",
           default: "draft",
         },
       },
@@ -253,8 +275,8 @@ export const tools = [
       if (args.from) payload.identityId = args.from;
       if (args.priority) payload.priority = args.priority;
       const mode = args.mode || "draft";
-      if (mode === "send") payload.send = true;
-      else if (mode === "open") payload.open = true;
+      if (mode === "send") return ERRO_ENVIO_BLOQUEADO;
+      if (mode === "open") payload.open = true;
       else payload.draft = true;
       return await api("POST", "/compose", payload);
     },
@@ -264,7 +286,7 @@ export const tools = [
   {
     name: "email_reply",
     description:
-      "Reply to a message. Default mode is 'draft'. Use mode='send' for immediate send. Set replyAll=true to reply to all recipients.",
+      "Reply to a message. This build CANNOT send: the reply is always saved as a draft for the human to review and send from Thunderbird. Set replyAll=true to reply to all recipients.",
     inputSchema: {
       type: "object",
       properties: {
@@ -273,7 +295,8 @@ export const tools = [
         replyAll: { type: "boolean", description: "Reply to all recipients" },
         mode: {
           type: "string",
-          enum: ["draft", "open", "send"],
+          enum: ["draft", "open"],
+          description: "draft (default) or open. Sending is not available in this build.",
           default: "draft",
         },
       },
@@ -286,8 +309,8 @@ export const tools = [
         replyAll: args.replyAll || false,
       };
       const mode = args.mode || "draft";
-      if (mode === "send") payload.send = true;
-      else if (mode === "open") payload.open = true;
+      if (mode === "send") return ERRO_ENVIO_BLOQUEADO;
+      if (mode === "open") payload.open = true;
       else payload.draft = true;
       return await api("POST", "/reply", payload);
     },
@@ -297,7 +320,7 @@ export const tools = [
   {
     name: "email_forward",
     description:
-      "Forward a message to a new recipient. Default mode is 'draft' for human review.",
+      "Forward a message to a new recipient. This build CANNOT send: the forward is always saved as a draft for the human to review and send from Thunderbird.",
     inputSchema: {
       type: "object",
       properties: {
@@ -306,7 +329,8 @@ export const tools = [
         body: { type: "string", description: "Optional additional text" },
         mode: {
           type: "string",
-          enum: ["draft", "open", "send"],
+          enum: ["draft", "open"],
+          description: "draft (default) or open. Sending is not available in this build.",
           default: "draft",
         },
       },
@@ -319,8 +343,8 @@ export const tools = [
         body: args.body || "",
       };
       const mode = args.mode || "draft";
-      if (mode === "send") payload.send = true;
-      else if (mode === "open") payload.open = true;
+      if (mode === "send") return ERRO_ENVIO_BLOQUEADO;
+      if (mode === "open") payload.open = true;
       else payload.draft = true;
       return await api("POST", "/forward", payload);
     },
@@ -362,7 +386,7 @@ export const tools = [
   {
     name: "email_archive",
     description:
-      "Archive, move, or delete messages. Operations: 'archive' (move to archive folder), 'move' (to specific folder), 'delete' (to trash). Permanent delete requires confirm=true.",
+      "Archive, move, or delete messages. Operations: 'archive' (move to archive folder), 'move' (to specific folder), 'delete' (to Trash, always recoverable). This build has NO permanent delete — 'delete' can only ever move to Trash. Deleting a folder is also unavailable.",
     inputSchema: {
       type: "object",
       properties: {
@@ -379,14 +403,6 @@ export const tools = [
         destinationFolderId: {
           type: "string",
           description: "Required for 'move' operation",
-        },
-        permanent: {
-          type: "boolean",
-          description: "For delete: skip trash (requires confirm)",
-        },
-        confirm: {
-          type: "boolean",
-          description: "Required for permanent delete",
         },
       },
       required: ["messageIds", "operation"],
@@ -405,12 +421,11 @@ export const tools = [
         });
       }
       if (args.operation === "delete") {
-        if (args.permanent && !args.confirm) {
-          return { error: "Permanent delete requires confirm=true" };
-        }
+        // Trava pessoal: `permanent` saiu do schema. Se vier assim mesmo,
+        // falha em vez de virar uma exclusão comum disfarçada.
+        if (args.permanent) return ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA;
         return await api("POST", "/messages/delete", {
           messageIds: args.messageIds,
-          permanent: args.permanent || false,
         });
       }
       return { error: `Unknown operation: ${args.operation}` };

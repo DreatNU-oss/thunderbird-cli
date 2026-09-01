@@ -16,7 +16,6 @@
     "addressBooks",
     "compose",
     "compose.save",
-    "compose.send",
     "messagesRead",
     "messagesMove",
     "messagesDelete",

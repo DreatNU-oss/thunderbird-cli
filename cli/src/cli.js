@@ -10,6 +10,36 @@
 import { Command } from "commander";
 import { api, output, outputError, getConfig, parseRelativeDate } from "./client.js";
 
+// ─── Travas pessoais ────────────────────────────────────────────────
+//
+// Versão pessoal: enviar e-mail direto, apagar em definitivo e apagar
+// pastas não existem. A barreira final está em extension/src/background.js;
+// estas aqui só garantem uma mensagem clara. Ver AUDITORIA.md.
+
+const ERRO_ENVIO_BLOQUEADO = {
+  message:
+    "Esta versão nunca envia e-mail sozinha. Nada foi enviado. " +
+    "Rode sem --send: a mensagem fica em Rascunhos para você revisar " +
+    "e enviar pelo Thunderbird.",
+  code: "ENVIO_BLOQUEADO",
+};
+
+const ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA = {
+  message:
+    "Esta versão nunca apaga em definitivo. Nada foi apagado. " +
+    "Rode sem --permanent: a mensagem vai para a Lixeira, de onde dá " +
+    "para recuperar.",
+  code: "EXCLUSAO_PERMANENTE_BLOQUEADA",
+};
+
+const ERRO_EXCLUSAO_DE_PASTA_BLOQUEADA = {
+  message:
+    "Esta versão nunca apaga pastas, porque isso levaria junto todas as " +
+    "mensagens dentro delas. Nada foi apagado. Se você realmente quer " +
+    "apagar esta pasta, faça pelo Thunderbird.",
+  code: "EXCLUSAO_DE_PASTA_BLOQUEADA",
+};
+
 const program = new Command();
 
 program
@@ -170,17 +200,10 @@ program
 
 program
   .command("folder-delete <folderId>")
-  .description("Delete a folder")
-  .option("--confirm", "required to confirm deletion")
-  .action(run(async (folderId, opts) => {
-    const g = program.opts();
-    const fmt = g.format;
-    if (!opts.confirm) {
-      outputError({ message: "Use --confirm to delete", code: "INVALID_ARGS" }, fmt);
-      return;
-    }
-    const data = await api("POST", "/folders/delete", { folderId }, getTimeout(g));
-    output(data, fmt, getOutputOpts(g));
+  .description("BLOQUEADO nesta versão pessoal — apague pastas pelo Thunderbird")
+  .option("--confirm", "não adianta: o comando está bloqueado")
+  .action(run(async () => {
+    outputError(ERRO_EXCLUSAO_DE_PASTA_BLOQUEADA, program.opts().format);
   }));
 
 // ─── Stats ────────────────────────────────────────────────────────────
@@ -393,20 +416,18 @@ program
 
 program
   .command("delete <messageIds>")
-  .description("Delete message(s) (to trash)")
-  .option("--permanent", "permanently delete (skip trash)")
-  .option("--confirm", "required for permanent delete")
+  .description("Apaga mensagem(ns) — sempre para a Lixeira")
+  .option("--permanent", "BLOQUEADO nesta versão pessoal")
   .action(run(async (messageIds, opts) => {
     const g = program.opts();
     const fmt = g.format;
-    if (opts.permanent && !opts.confirm) {
-      outputError({ message: "Use --confirm for permanent delete", code: "INVALID_ARGS" }, fmt);
+    if (opts.permanent) {
+      outputError(ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA, fmt);
       return;
     }
     const ids = parseIds(messageIds);
     const data = await api("POST", "/messages/delete", {
       messageIds: ids,
-      permanent: opts.permanent || false,
     }, getTimeout(g));
     output(data, fmt, getOutputOpts(g));
   }));
@@ -523,7 +544,7 @@ program
   .option("--header <key:value>", "custom header")
   .option("--draft", "save as draft (default)")
   .option("--open", "open compose window")
-  .option("--send", "send immediately")
+  .option("--send", "BLOQUEADO nesta versão pessoal")
   .action(run(async (opts) => {
     const g = program.opts();
     let body = opts.body || "";
@@ -546,8 +567,10 @@ program
 
     // Mode: send, open, or draft (default)
     if (opts.send) {
-      payload.send = true;
-    } else if (opts.open) {
+      outputError(ERRO_ENVIO_BLOQUEADO, g.format);
+      return;
+    }
+    if (opts.open) {
       payload.open = true;
     } else {
       payload.draft = true;
@@ -568,7 +591,7 @@ program
   .option("--html", "body is HTML")
   .option("--draft", "save as draft (default)")
   .option("--open", "open compose window")
-  .option("--send", "send immediately")
+  .option("--send", "BLOQUEADO nesta versão pessoal")
   .action(run(async (messageId, opts) => {
     const g = program.opts();
     let body = opts.body || "";
@@ -584,8 +607,10 @@ program
     };
 
     if (opts.send) {
-      payload.send = true;
-    } else if (opts.open) {
+      outputError(ERRO_ENVIO_BLOQUEADO, g.format);
+      return;
+    }
+    if (opts.open) {
       payload.open = true;
     } else {
       payload.draft = true;
@@ -604,7 +629,7 @@ program
   .option("--body <text>", "additional text")
   .option("--draft", "save as draft (default)")
   .option("--open", "open compose window")
-  .option("--send", "send immediately")
+  .option("--send", "BLOQUEADO nesta versão pessoal")
   .action(run(async (messageId, opts) => {
     const g = program.opts();
     const payload = {
@@ -614,8 +639,10 @@ program
     };
 
     if (opts.send) {
-      payload.send = true;
-    } else if (opts.open) {
+      outputError(ERRO_ENVIO_BLOQUEADO, g.format);
+      return;
+    }
+    if (opts.open) {
       payload.open = true;
     } else {
       payload.draft = true;
