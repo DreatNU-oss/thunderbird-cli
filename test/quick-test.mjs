@@ -7,6 +7,7 @@
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "crypto";
+import { caminhoSeguroDeAnexo } from "../cli/src/client.js";
 
 const PORT = 19700;
 const WS_PORT = 19701;
@@ -184,6 +185,17 @@ test("envio direto bloqueado no forward", await httpCall("POST", "/forward", { m
 test("exclusao permanente bloqueada", await httpCall("POST", "/messages/delete", { messageIds: [1], permanent: true }), r => r.code === "EXCLUSAO_PERMANENTE_BLOQUEADA" && !r.success);
 test("delete normal vai para a Lixeira", await httpCall("POST", "/messages/delete", { messageIds: [1] }), r => r.success && r.destino === "Lixeira");
 test("exclusao de pasta bloqueada", await httpCall("POST", "/folders/delete", { folderId: "f1" }), r => r.code === "EXCLUSAO_DE_PASTA_BLOQUEADA" && !r.success);
+
+// Nome de anexo é escolhido por quem manda o e-mail — conteúdo hostil.
+const juntar = (d, n) => `${d}/${n}`;
+const nunca = () => false;
+test("anexo com ../ nao escapa da pasta", caminhoSeguroDeAnexo("/destino", "../../../.zshrc", "1.2", nunca, juntar), c => c === "/destino/zshrc");
+test("anexo com caminho absoluto nao escapa", caminhoSeguroDeAnexo("/destino", "/etc/passwd", "1.2", nunca, juntar), c => c === "/destino/passwd");
+test("anexo com barra invertida nao escapa", caminhoSeguroDeAnexo("/destino", "..\\..\\windows\\system32\\x.dll", "1.2", nunca, juntar), c => c === "/destino/x.dll");
+test("anexo oculto deixa de ser oculto", caminhoSeguroDeAnexo("/destino", ".ssh", "1.2", nunca, juntar), c => c === "/destino/ssh");
+test("anexo sem nome ganha nome", caminhoSeguroDeAnexo("/destino", "", "1.2", nunca, juntar), c => c === "/destino/anexo-1.2");
+test("anexo nao sobrescreve arquivo existente", caminhoSeguroDeAnexo("/destino", "nota.pdf", "1.2", (c) => c === "/destino/nota.pdf", juntar), c => c === "/destino/nota (1).pdf");
+test("anexo normal passa intacto", caminhoSeguroDeAnexo("/destino", "contrato.pdf", "1.2", nunca, juntar), c => c === "/destino/contrato.pdf");
 
 console.log("\n\x1b[1mStats & Recent\x1b[0m");
 test("GET /stats", await httpCall("GET", "/stats"), r => r.totalAccounts === 1);

@@ -212,6 +212,39 @@ export function outputError(err, format = "json") {
 }
 
 /**
+ * Monta um caminho seguro para gravar um anexo.
+ *
+ * O nome do arquivo vem de quem enviou o e-mail, ou seja, é conteúdo
+ * hostil. Sem tratamento, um anexo chamado "../../../.zshrc" escaparia da
+ * pasta escolhida e sobrescreveria arquivos do usuário. Aqui o nome é
+ * reduzido ao último pedaço (sem barras), perde os pontos da frente (para
+ * não virar arquivo oculto) e nunca sobrescreve um arquivo já existente.
+ *
+ * `existe` e `juntar` entram por parâmetro para o teste conseguir rodar
+ * sem tocar no disco.
+ */
+export function caminhoSeguroDeAnexo(dir, nome, partName, existe, juntar) {
+  const limpo = String(nome || "")
+    .split(/[/\\]/).pop()          // só o último pedaço: mata "../" e "/etc/"
+    .replace(/\0/g, "")            // byte nulo
+    .replace(/^\.+/, "")           // ".zshrc" -> "zshrc"
+    .trim()
+    .slice(0, 200);
+
+  const base = limpo || `anexo-${String(partName || "sem-nome").replace(/[^\w.-]/g, "_")}`;
+
+  let caminho = juntar(dir, base);
+  let n = 1;
+  while (existe(caminho)) {
+    const ponto = base.lastIndexOf(".");
+    const [raiz, ext] = ponto > 0 ? [base.slice(0, ponto), base.slice(ponto)] : [base, ""];
+    caminho = juntar(dir, `${raiz} (${n})${ext}`);
+    n++;
+  }
+  return caminho;
+}
+
+/**
  * Parse relative date strings (7d, 2w, 3m, 1y, today, yesterday) to ISO dates
  */
 export function parseRelativeDate(input) {

@@ -8,7 +8,7 @@
  */
 
 import { Command } from "commander";
-import { api, output, outputError, getConfig, parseRelativeDate } from "./client.js";
+import { api, output, outputError, getConfig, parseRelativeDate, caminhoSeguroDeAnexo } from "./client.js";
 
 // ─── Travas pessoais ────────────────────────────────────────────────
 //
@@ -674,7 +674,7 @@ program
   .action(run(async (messageId, partName, opts) => {
     const g = program.opts();
     const timeout = getTimeout(g);
-    const { writeFileSync, mkdirSync } = await import("fs");
+    const { writeFileSync, mkdirSync, existsSync } = await import("fs");
     const { join } = await import("path");
 
     if (opts.all) {
@@ -684,7 +684,10 @@ program
       const results = [];
       for (const att of attachments) {
         const data = await api("POST", `/messages/${messageId}/attachment`, { partName: att.partName }, timeout);
-        const filePath = join(dir, att.name || att.partName);
+        // O nome do anexo vem de quem mandou o e-mail: é conteúdo hostil.
+        // Sem limpeza, um anexo chamado "../../../.zshrc" escaparia da
+        // pasta de destino e sobrescreveria arquivos meus.
+        const filePath = caminhoSeguroDeAnexo(dir, att.name, att.partName, existsSync, join);
         writeFileSync(filePath, Buffer.from(data.data, "base64"));
         results.push({ partName: att.partName, name: att.name, path: filePath });
       }
