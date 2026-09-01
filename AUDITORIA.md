@@ -130,3 +130,34 @@ Li todo o código: **não há nenhum manuseio de senha/token de IMAP/SMTP** em n
 - **Fase 6:** recomendarei **subir a ponte manualmente** (só quando for usar), não no boot — encurta a janela do SEC-02.
 - **Fase 3:** rodar `npm audit fix` para zerar os alertas fáceis.
 - **Sugestão extra (opcional):** posso, na Fase 4, também (a) fechar o CORS da ponte e (b) implementar de verdade a verificação do `TB_AUTH_TOKEN` que já está 90% fiada no cliente — fecharia o SEC-02/03/05. Te apresento como diff antes de aplicar, se você quiser.
+
+---
+
+## Apêndice — achado tardio (revisão final, mesmo dia)
+
+### SEC-08 — Alta — Escape de pasta ao baixar anexos ✅ CORRIGIDO
+
+Encontrado depois de fechar o relatório acima, durante a revisão final. Eu havia classificado o download de anexos como "leitura inofensiva"; estava errado.
+
+O nome do arquivo de um anexo é escolhido por **quem envia o e-mail**, e o código o usava direto para montar o caminho de gravação — `join(dir, att.name)` em `cli/src/cli.js:687`. Um anexo chamado `../../../.zshrc` escapa da pasta de destino e sobrescreve arquivos em qualquer lugar onde o usuário tenha permissão de escrita. O ataque exige apenas: mandar um e-mail com o anexo, e o usuário pedir ao agente para baixar os anexos daquela mensagem.
+
+**Corrigido** em `cli/src/client.js` (`caminhoSeguroDeAnexo`): o nome é reduzido ao último pedaço sem barras, perde pontos iniciais (para não virar arquivo oculto), perde byte nulo, é limitado em tamanho, e nunca sobrescreve arquivo existente. 7 testes cobrem os casos.
+
+**Lição para a próxima revisão:** "somente leitura" não quer dizer inofensivo. Toda operação de leitura que **grava alguma coisa** (arquivo, log, cache, nome de pasta) volta a ser superfície de ataque, e o nome do arquivo é dado do atacante como qualquer outro.
+
+---
+
+## O que foi efetivamente corrigido neste fork
+
+| Achado | Situação |
+|---|---|
+| SEC-01 — documentação descrevia defesas inexistentes | ✅ `SKILL.md` reescrito e honesto; o `SECURITY.md` do autor continua no repositório e continua descrevendo coisas que não existem — **não confie nele** |
+| SEC-02 — ponte sem autenticação real | ✅ token exigido de verdade, comparação em tempo constante; a ponte se recusa a subir sem token |
+| SEC-03 — travas contornáveis pela ponte | ✅ as travas passaram para a extensão, que é o último ponto antes do Thunderbird |
+| SEC-04 — sem defesa de dados contra prompt injection | ⚠️ **continua assim.** A defesa é o julgamento do agente + as regras do `SKILL.md` |
+| SEC-05 — CORS aberto | ✅ CORS removido; `Origin`/`Referer` recusados; `Host` validado |
+| SEC-06 — CVEs em dependências | ✅ 0 vulnerabilidades |
+| SEC-07 — envio direto e exclusão permanente existiam | ✅ removidos; exclusão de pasta também |
+| SEC-08 — escape de pasta em anexos | ✅ corrigido |
+
+**Risco residual conhecido:** a porta WebSocket (7701), por onde a extensão conversa com a ponte, **não** exige token — a extensão não teria onde guardar um segredo que outro programa da máquina não pudesse ler. Mitigação aplicada: só uma extensão conectada por vez, então um programa hostil não consegue tomar o lugar da extensão do Thunderbird enquanto ela estiver conectada. Se ele conectar **antes** do Thunderbird, a extensão real é recusada e você vê o erro — falha visível, não comprometimento silencioso.
