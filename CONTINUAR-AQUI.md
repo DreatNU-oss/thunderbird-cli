@@ -1,4 +1,4 @@
-# Ponto de retomada — 1º de setembro de 2026
+# Ponto de retomada — 1º de setembro de 2026 (atualizado às 10h)
 
 Estado congelado do projeto, para retomar em outra sessão do Claude Code
 nesta mesma máquina. O repositório é **`~/Thunderbolt`** (branch `meu`).
@@ -7,43 +7,59 @@ nesta mesma máquina. O repositório é **`~/Thunderbolt`** (branch `meu`).
 
 ## Resumo em uma linha
 
-A parte técnica está **pronta e testada**; falta conectar a última conta de
-e-mail, instalar a extensão no Thunderbird e fazer a verificação final.
+**As fases 0 a 7 estão fechadas e verificadas com o Thunderbird real.** Falta
+só conectar a 5ª conta (Microsoft 365) e criar o apelido `garb.digital` — as
+duas dependem do André no teclado, não do agente.
 
 ---
 
 ## O que já está feito
 
-**Fases 0, 1, 2, 3, 4 e 6 do plano original** (`~/Downloads/prompt-thunderbird-cli-instalacao.md`).
+**Todas as 8 fases do plano original** (`~/Downloads/prompt-thunderbird-cli-instalacao.md`).
 
 | Item | Situação |
 |---|---|
-| Auditoria de segurança | ✅ Feita. Veredito: **seguro com ressalvas**. Está em `AUDITORIA.md` |
-| Fork pessoal | ✅ `github.com/DreatNU-oss/thunderbird-cli`, clonado em `~/Thunderbolt`, branch `meu`, tudo enviado |
-| Dependências | ✅ Instaladas do código-fonte (nunca global). **0 vulnerabilidades** |
+| Auditoria de segurança | ✅ `AUDITORIA.md`. Veredito: **seguro com ressalvas** |
+| Fork pessoal | ✅ `github.com/DreatNU-oss/thunderbird-cli`, em `~/Thunderbolt`, branch `meu` |
+| Dependências | ✅ Do código-fonte, nunca global. **0 vulnerabilidades** |
 | Testes | ✅ **109 passando** (57 CLI + 37 MCP + 15 ponte), 0 falhas |
-| Travas de segurança | ✅ Aplicadas e testadas (detalhe abaixo) |
-| Servidor MCP | ✅ Registrado apontando para `~/Thunderbolt/mcp/src/server.js`, conecta, 12 ferramentas |
-| Token da ponte | ✅ Gerado em `~/.config/thunderbird-cli/config.json` (permissão 600) |
-| Extensão empacotada | ✅ `dist/thunderbird-cli-2.0.0.xpi`, já sem a permissão de envio |
+| Travas de segurança | ✅ Aplicadas **e verificadas contra o Thunderbird real** (ver abaixo) |
+| Servidor MCP | ✅ Registrado em `~/.claude.json` → `~/Thunderbolt/mcp/src/server.js`, 12 ferramentas |
+| Token da ponte | ✅ `~/.config/thunderbird-cli/config.json`, permissão 600 |
+| **Extensão instalada** | ✅ **Permanente** (`app-profile`, não temporária), sobreviveu a reinício |
+| **ThunderAI** | ✅ **Removida.** Decisão do André em 01/09 |
 | Manual de manutenção | ✅ `COMO-ATUALIZAR.md` |
 
-### As travas (Fase 4)
+### As travas (Fase 4) — e a prova de que funcionam (Fase 7)
 
-Ficam em `extension/src/background.js`, que é o último ponto antes do
-Thunderbird agir — a auditoria mostrou que a ponte e o MCP podem ser
-contornados por outro programa da máquina, mas a extensão não.
+Ficam em `extension/src/background.js`, o último ponto antes do Thunderbird
+agir. A auditoria mostrou que a ponte e o MCP podem ser contornados por outro
+programa da máquina; a extensão, não.
 
-1. **Envio direto impossível.** Tudo vira rascunho. A permissão `compose.send`
-   foi removida do manifesto, então o próprio Thunderbird recusa enviar.
-2. **Exclusão permanente não existe.** Tudo vai para a Lixeira; pedir exclusão
-   permanente falha visivelmente.
-3. **Exclusão de pasta bloqueada** (acréscimo, além do pedido original).
+1. **Envio direto impossível.** Tudo vira rascunho. `compose.send` foi removida
+   do manifesto, então o próprio Thunderbird recusa enviar.
+2. **Exclusão permanente não existe.** Tudo vai para a Lixeira.
+3. **Exclusão de pasta bloqueada.**
 4. **Ponte protegida:** token exigido de verdade, CORS fechado, requisições de
    navegador recusadas, validação de Host, uma extensão por vez.
-5. **Corrigida uma falha séria** achada na revisão final (SEC-08): o nome de um
-   anexo, escolhido por quem envia o e-mail, permitia gravar arquivos fora da
-   pasta de destino.
+5. **SEC-08 corrigido:** nome de anexo não escapa mais da pasta de destino.
+
+**Verificação de 01/09 (Fase 7), com Thunderbird conectado.** Os testes foram
+feitos com `curl` **direto na ponte** — pulando CLI e MCP —, que é exatamente o
+cenário do programa local malicioso descrito no SEC-02/SEC-03. Cada trava foi
+testada **com um controle**, para provar que a recusa veio da trava e não de um
+comando malformado:
+
+| Requisição | Resultado |
+|---|---|
+| `/compose` sem `send` (controle) | `draft_saved` |
+| `/compose` com `send:true` | `ENVIO_BLOQUEADO` — sem envio e **sem resíduo** em Rascunhos |
+| `/messages/delete` sem `permanent` (controle) | `deleted:1, destino:"Lixeira"` |
+| `/messages/delete` com `permanent:true` | `EXCLUSAO_PERMANENTE_BLOQUEADA` — mensagem **sobreviveu**, conferido depois |
+
+A trava de exclusão de pasta **não** foi testada ao vivo de propósito: ela
+impede apagar até a pasta de teste, o que deixaria lixo permanente na caixa.
+Está coberta pelos testes automatizados.
 
 ---
 
@@ -51,75 +67,58 @@ contornados por outro programa da máquina, mas a extensão não.
 
 ### 1. A 5ª conta de e-mail (Microsoft 365)
 
-Já configuradas — **4 de 5**, todas em IMAP:
+Configuradas — **4 de 5**, todas IMAP: `dreatnu@yahoo.com`,
+`andreschlemper@me.com` (iCloud), `noreply.garb@gmail.com`, `climedsch@gmail.com`.
 
-- `dreatnu@yahoo.com`
-- `andreschlemper@me.com` (iCloud)
-- `noreply.garb@gmail.com`
-- `climedsch@gmail.com`
+⚠️ **Não se engane com o `stats`:** ele reporta `totalAccounts: 5`, mas a
+quinta é "Pastas locais", que é uma pasta do Thunderbird, não uma caixa.
 
 **Receita para a Microsoft:** preencher nome e e-mail, **deixar o campo de
 senha vazio**, clicar em Continuar. O Thunderbird reconhece o provedor e abre a
-janela de login da própria Microsoft, e a senha é digitada lá. Escolher sempre
+janela de login da própria Microsoft; a senha é digitada lá. Escolher sempre
 **IMAP**, nunca POP3.
 
 ### 2. O apelido `andreschlemper@garb.digital`
 
-**Ainda não foi adicionado.** Descoberta importante: esse endereço **não é uma
-conta separada** — é um *apelido* do iCloud que entrega na mesma caixa do
-`andreschlemper@me.com`. O domínio está no iCloud+ (os registros MX apontam
-para `mx01.mail.icloud.com`); o Cloudflare só hospeda o DNS, não guarda e-mail.
-Tentar adicioná-lo como conta separada **nunca vai funcionar**.
-
-O e-mail que chega nele **já está caindo** na conta iCloud. Falta só poder
-enviar como ele:
+**Ainda não foi adicionado** (conferido no perfil: não existe nenhuma
+identidade com esse endereço). **Não é uma conta separada** — é um *apelido* do
+iCloud que entrega na mesma caixa do `andreschlemper@me.com`. Os MX apontam
+para `mx01.mail.icloud.com`; o Cloudflare só hospeda o DNS. Tentar adicioná-lo
+como conta separada **nunca vai funcionar**. O e-mail já está caindo na conta
+iCloud; falta só poder *enviar* como ele:
 
 1. Menu ☰ → **Configurações de contas**
 2. Clicar na conta `andreschlemper@me.com`
 3. **Gerenciar identidades…** → **Adicionar…**
 4. Nome: André Schlemper · E-mail: `andreschlemper@garb.digital`
 
-⚠️ **Não alterar o campo Usuário do servidor de envio (SMTP).** Ele precisa
+⚠️ **Não alterar o campo Usuário do servidor de envio (SMTP).** Precisa
 continuar `andreschlemper@me.com`, senão o envio quebra.
 
-### 3. Fase 5 — instalar a extensão permanentemente
+---
 
-O `.xpi` já está construído e verificado.
+## Coisas descobertas em 01/09 que valem saber
 
-1. Subir a ponte: `cd ~/Thunderbolt && npm run bridge` (deixar a janela aberta)
-2. Thunderbird → **Ferramentas** → **Complementos e temas** → engrenagem ⚙ →
-   **Instalar complemento de arquivo…** → `~/Thunderbolt/dist/thunderbird-cli-2.0.0.xpi`
-3. Confirmar que sobrevive a um reinício do Thunderbird
-4. Testar: `node cli/src/cli.js health`
-
-### 4. Fase 7 — verificação final (só leitura)
-
-Nesta ordem: `health` → `stats` (conferir se bate com o que aparece no
-Thunderbird) → uma busca simples entre contas → **e então testar as travas com
-o Thunderbird conectado**: tentar enviar direto e tentar apagar
-permanentemente. **As duas têm que falhar.** Se qualquer uma funcionar, avisar
-imediatamente e não entregar como pronto.
-
-Não enviar e-mail de teste para ninguém e não apagar nada. Para testar, usar um
-rascunho criado na hora.
-
-### 5. Decisão pendente: a extensão ThunderAI
-
-O André instalou, por conta própria, a extensão **ThunderAI**
-(`thunderai@micz.it`, versão 4.1.1) buscando "claude" na loja do Thunderbird.
-**Ela não faz parte deste projeto** e não é necessária para nada aqui — nosso
-caminho não usa chave de API.
-
-Ela pede uma **chave de API paga** (a assinatura do Claude não inclui créditos
-de API) e pediu permissão para **ler, escrever e modificar todas as mensagens,
-ver as contas e baixar arquivos** — acesso total às 5 caixas, sem ter passado
-por auditoria nenhuma.
-
-Três caminhos foram oferecidos e **o André ainda não escolheu**:
-
-1. Deixar de lado por enquanto (foi a recomendação)
-2. Auditar a ThunderAI antes de colar a chave
-3. Desinstalar
+- **Partida a frio na `climedsch@gmail.com`.** É a maior caixa (31.815
+  mensagens, 79 pastas). A **primeira** busca depois de abrir o Thunderbird
+  estoura o timeout padrão de 30s; depois de aquecida leva ~3,7s. **É só
+  repetir.** Não é defeito.
+- **O MCP tem timeout fixo de 30s e não tem como aumentar** (`mcp/src/client.js:50`).
+  O CLI tem `--timeout <ms>`. Se o agente falhar por timeout numa caixa grande,
+  a causa é essa.
+- **O servidor MCP lê o token uma única vez, ao subir** (`mcp/src/client.js:43`).
+  Se o token for regenerado, as 12 ferramentas só voltam a funcionar depois de
+  reiniciar o Claude Code. O CLI relê a cada execução.
+- **Token exposto em transcrição.** Em 01/09 um comando de verificação imprimiu
+  o token da ponte na tela de uma sessão. O André foi informado e **decidiu não
+  trocá-lo**: só serve para a porta local, só enquanto a ponte estiver no ar, e
+  as travas seguram mesmo quem o tenha. Para trocar: `npm run token` (+ reiniciar
+  o Claude Code).
+- **Cuidado com worktrees.** A sessão de 01/09 abriu numa worktree em
+  `.claude/worktrees/`, que estava no código **original do autor**, sem nenhuma
+  trava (`compose.send` presente, `test:tudo` inexistente). Trabalhar de lá teria
+  produzido uma extensão capaz de enviar sozinha. **Confira sempre
+  `git rev-parse --abbrev-ref HEAD` = `meu` antes de editar ou empacotar.**
 
 ---
 
@@ -138,6 +137,36 @@ Três caminhos foram oferecidos e **o André ainda não escolheu**:
 - Se as travas forem tocadas, `npm run test:tudo` **tem que continuar verde**.
 
 ---
+
+## Risco residual conhecido (não maquiar)
+
+- **Prompt injection continua sem defesa de código** (SEC-04). O conteúdo de
+  e-mail entra cru no contexto. O que protege é o julgamento do agente e as
+  regras do `SKILL.md` — não uma trava.
+- **A porta 7701 (WebSocket) não exige token.** Mitigação: uma extensão
+  conectada por vez. Se algo tomar a vaga antes do Thunderbird, a extensão real
+  é recusada e o erro aparece — falha visível, não silenciosa.
+- **`SECURITY.md` do autor segue no repositório descrevendo defesas
+  inexistentes.** Não confiar nele.
+
+---
+
+---
+
+## Organização das caixas (02/09/2026)
+
+A ferramenta já está em uso de verdade. O estado das 4 caixas — estruturas de
+pastas criadas, etiquetas, o que foi para Spam/Lixeira, as decisões do André
+sobre o que preservar e **12 armadilhas da ferramenta descobertas na prática** —
+está em **`CAIXAS-ESTADO.md`**. Ler antes de mexer em qualquer caixa.
+
+Resumo: Entradas de 12.844 → 3.406 mensagens. 705 notas fiscais organizadas em
+`Notas Fiscais Recebidas` com etiquetas PJ/PF, 8.092 mensagens de ≤2024 em
+`Arquivo` por ano, 1.147 em Spam e 1.355 na Lixeira. Nada apagado em definitivo.
+
+⚠️ **A mais importante das armadilhas:** `POST /sync` não sincroniza nada e
+marcar como lida não chega ao servidor de forma confiável — o cache local
+confirma a si mesmo. Mover e criar pasta, sim, são confiáveis.
 
 ## Comandos úteis
 
