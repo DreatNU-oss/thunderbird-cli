@@ -73,17 +73,62 @@ relatório.
 
 ## Vão para Spam
 
-Propaganda pura. No Gmail, mandar para Spam treina o filtro — por isso spam e
-não lixeira.
+Reconstruída em 03/09/2026 lendo os remetentes que estavam de fato nas pastas
+de Spam das contas — não de memória. Só entram domínios com 3+ mensagens e sem
+conflito. Casar pelo **domínio raiz** (o Acordo Certo usa 16 subdomínios).
 
-- Acordo Certo — usa 16 subdomínios; casar pelo domínio raiz
-- Takeda · Printi · Sebrae · Serasa · MedZone
-- Kolplast/Bonifiq **apenas o marketing** (pedido faturado fica — ver precedência)
+| Domínio | Volume no spam |
+|---|---:|
+| `maileffecti.com.br` | 154 |
+| `dell.com` | 86 |
+| `acordocerto.com.br` | 78 |
+| `printi.com.br` | 63 |
+| `bonifiq.com.br` | 55 |
+| `elmeco.com.br` | 45 |
+| `serasaexperian.com.br` | 41 |
+| `takedaglobal.com` | 39 |
+| `sebraemg.com.br` · `sebrae.com.br` | 39 |
+| `linkedin.com` | 27 |
+| `consumidorpositivo.com.br` | 26 |
+| `clinrio.com.br` | 26 |
+| `mkteffecti.com.br` | 23 |
+| `medzone.com.br` | 17 |
+| `xcom.com.br` | 12 |
+| `brgenebra.com.br` | 11 |
+| `oihelena.com` | 11 |
+| `docusign.com` | 10 |
+| `ciruvale.com.br` | 8 |
+| `easeus.com` · `asus.com` | 12 |
+| `rtpd.com.br` | 5 |
+| `telediu.com.br` · `medpej.com.br` | 8 |
+| `metamail.com` · `magazinemedica.com.br` | 6 |
 
-> ⚠️ **Lista incompleta de propósito.** Na faxina foram 38 domínios de envio em
-> massa, mas o registro guardou o número, não a lista. Vou reconstruí-la lendo os
-> remetentes que já estão hoje nas pastas de Spam — assim ela sai exata, e não
-> de memória. Isso acontece na primeira rodada supervisionada.
+**Decisões do André em 03/09:** Dell, DocuSign e LinkedIn entram no spam. No caso
+do LinkedIn eu havia sugerido deixar de fora (mensagem de recrutador não é
+propaganda) — ele decidiu incluir. Para reverter, basta apagar a linha.
+
+Dell e DocuSign são seguros porque o que importa está protegido por outra via:
+as mensagens da Tamires caem na regra de pessoas, e o documento assinado vem de
+`docusign.**net**`, não `.com`.
+
+### Excluídos de propósito — não transformar em regra
+
+Apareceram nas pastas de spam, mas viraram regra seriam um estrago:
+
+| Domínio | Por quê |
+|---|---|
+| `coop.br`, `ind.br`, `tec.br`, `log.br` | **Não são domínios**, são sufixos públicos (como `com.br`). `coop.br` pegaria a **Unimed Três Corações**, que manda o Demonstrativo de Repasse |
+| `google.com`, `microsoft.com`, `apple.com`, `appleid.com` | Códigos de verificação e alertas de segurança da conta |
+| `yahoo.com`, `hotmail.com` | Genéricos — arrastariam mensagens de pessoas |
+| `portalmedico.org.br` | Está na lista de preservados (CFM) |
+| `binance.com` | Manda código de segurança junto com a propaganda |
+
+**Unimed fica fora do spam por inteiro.** `unimedtc.coop.br` manda tanto disparo
+em massa quanto a Fatura e o Demonstrativo de Repasse da clínica. Não há regra
+por domínio que separe os dois — então não se mexe, e vai para o relatório.
+
+A cauda longa (50 domínios com 1 ou 2 mensagens) ficou de fora: pouco volume,
+e o risco de acertar o alvo errado é maior que o ganho.
 
 > ⚠️ **O iCloud não tem pasta de lixo eletrônico.** Nessa conta, propaganda vai
 > para a Lixeira: não treina filtro e some em ~30 dias.
