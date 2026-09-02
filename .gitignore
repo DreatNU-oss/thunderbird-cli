@@ -5,3 +5,6 @@ cli/config.json
 # Build output — exclude dist/ except for signed releases
 dist/*
 !dist/releases/
+
+# Marcador da triagem automatica (data/hora da ultima rodada)
+.triagem-estado.json
