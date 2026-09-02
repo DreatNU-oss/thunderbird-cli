@@ -29,11 +29,19 @@ case "${1:-}" in
       exit 3
     fi
 
-    # Desanexa de verdade: sem isto a ponte vira filha deste script e segura
-    # os descritores de saída, travando quem estiver lendo a saída do script.
+    # Desanexa a ponte: subshell (duplo fork) + as tres saidas redirecionadas.
+    # Sem isso ela vira filha deste script e segura os descritores, travando
+    # quem estiver lendo a saida. NAO usar setsid: nao existe no macOS.
     if ! pgrep -f "bridge/bridge.js" >/dev/null; then
-      ( cd "$RAIZ" && setsid nohup node bridge/bridge.js </dev/null >"$LOG" 2>&1 & ) &
-      sleep 2
+      ( cd "$RAIZ" && nohup node bridge/bridge.js </dev/null >"$LOG" 2>&1 & )
+      sleep 3
+    fi
+
+    # Falhar rapido e alto se a ponte nem subiu, em vez de esperar em vao.
+    if ! pgrep -f "bridge/bridge.js" >/dev/null; then
+      echo "ERRO_PONTE_NAO_SUBIU: veja $LOG"
+      sed -n '1,10p' "$LOG" 2>/dev/null
+      exit 5
     fi
 
     INICIO=$(date +%s)
