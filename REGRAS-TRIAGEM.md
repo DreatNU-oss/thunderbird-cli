@@ -58,6 +58,27 @@ Verificados um a um por você durante a faxina. Nunca vão para spam nem lixeira
 | `portalmedico.org.br` | CFM — inclui renovação de registro |
 | `crmmg.org.br` | Conselho Regional de Medicina |
 
+### CRM-MG e CFM — informativo x específico
+
+Regra do André, 03/09/2026. **Informativo geral** (fórum, evento, campanha,
+convite) pode ir para a Lixeira. **Específico do médico ou da clínica**
+(anuidade, renovação cadastral, certidão de regularidade, processo) é
+importante e fica.
+
+**O robô nunca move nada do CRM sozinho.** Motivo: `comunicacao@crmmg.org.br`
+manda as duas coisas pelo mesmo endereço — os fóruns e também "como pagar a
+anuidade de 2026" e "alerta para golpe com pagamento da anuidade". Separar
+exigiria casar pelo texto do assunto, que é a armadilha 7 do `CAIXAS-ESTADO.md`.
+E não adianta ler o corpo: o CRM dispara por plataforma de marketing e o e-mail
+só contém "clique aqui para ver on-line".
+
+Então o robô **lista as mensagens do CRM no relatório**, dizendo qual é
+informativo e qual é específico, e o André responde "lixeira" no número.
+
+A renovação cadastral não corre risco: ela vem de
+`naoresponda@portalmedico.org.br` e `naoresponda.crmmg.aps@portalmedico.org.br`,
+protegidos pela linha do `portalmedico.org.br` acima.
+
 ## Nunca tocar — pessoas
 
 Regra sua, registrada na faxina: **pessoa nunca se trata em bloco.**
