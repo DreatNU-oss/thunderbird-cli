@@ -132,12 +132,11 @@ instalação:
 
 ## Como ligar — a sequência
 
-1. Escrever as regras ✅ · o roteiro da tarefa agendada é o próximo passo
-2. **Uma rodada seca supervisionada**, com o André olhando. Nada se move.
-   É nela que a lista de domínios de propaganda é reconstruída a partir do que
-   já está nas pastas de Spam — exata, não de memória.
-3. Corrigir as regras conforme o que aparecer
-4. Agendar, **ainda em modo seco**, por alguns dias
+1. Escrever as regras e o roteiro ✅
+2. **Rodada seca supervisionada** ✅ feita em 03/09. Nada foi movido. A lista
+   de domínios de propaganda foi reconstruída das pastas de Spam — exata.
+3. Corrigir as regras conforme o uso ⏳ em andamento
+4. Agendar em modo seco ✅ tarefa `triagem-email`, cron `7 8,14 * * *`
 5. Virar para `modo: real` quando o relatório estiver batendo
 
 O modo seco não economiza tempo nenhum — só gera confiança. Vale a paciência
@@ -169,3 +168,41 @@ A tarefa agendada local fica gravada em disco, roda no Mac, e **se perder o
 horário, roda na próxima vez que o Claude Code abrir** — a recuperação pedida.
 A dependência que sobra: ela roda com o Claude Code aberto. Na prática, o
 relatório das 8h está esperando quando o André abre o programa.
+
+
+---
+
+## O que a rodada seca de 03/09 ensinou
+
+Quatro defeitos que teriam quebrado a rotina, todos encontrados por rodar
+supervisionado antes de agendar:
+
+**1. `/messages/list` não devolve as mensagens mais recentes primeiro.** Ler as
+300 primeiras de cada Entrada e filtrar por data devolveu "0 novas" — eram as
+mais antigas. Um agente com esse erro reportaria caixa vazia todo dia, para
+sempre. Corrigido: usar `/messages/search` com `fromDate`, que filtra do lado
+certo.
+
+**2. A extensão leva ~40s para responder depois que a ponte sobe**, não os 3
+segundos que a documentação do projeto promete. O script espera até 240s.
+
+**3. `setsid` não existe no macOS.** O script usava para desanexar a ponte; ela
+nunca subia, e o script esperava em vão. O silêncio parecia "extensão dormente"
+— diagnóstico errado que só caiu quando li o log. Trocado por subshell com as
+três saídas redirecionadas. Lição: falhar alto e cedo. O script agora confere se
+a ponte subiu antes de entrar na espera.
+
+**4. Mensagens chegam duplicadas** (Microsoft ×6, CFM ×3, BRCondomínio ×3,
+Anthropic ×2). O relatório agrupa por remetente+assunto.
+
+### A armadilha mais perigosa: sufixo público virando regra
+
+A reconstrução da lista de spam agrupava por domínio raiz e colapsou
+`unimedtc.coop.br` em **`coop.br`** — que não é um domínio, é um sufixo público,
+como `com.br`. Virar regra teria mandado a **Fatura e o Demonstrativo de Repasse
+da Unimed Três Corações** para o spam. Mesmo problema com `ind.br`, `tec.br` e
+`log.br`.
+
+Generalizando: **antes de transformar um domínio em regra, verifique se ele não
+é um sufixo público.** Um agrupamento automático produz esses colapsos em
+silêncio, e o estrago aparece semanas depois, quando faltar uma fatura.
