@@ -1,7 +1,8 @@
-# Ponto de retomada — 1º de setembro de 2026 (atualizado às 10h)
+# Ponto de retomada — 1º de setembro de 2026 (caminhos e travas revistos em 21/09/2026)
 
 Estado congelado do projeto, para retomar em outra sessão do Claude Code
-nesta mesma máquina. O repositório é **`~/Thunderbolt`** (branch `meu`).
+nesta mesma máquina. O repositório é **`~/Thundirbird`** (branch `meu`). A pasta
+antiga, `~/Thunderbolt`, não existe mais.
 
 ---
 
@@ -20,13 +21,13 @@ duas dependem do André no teclado, não do agente.
 | Item | Situação |
 |---|---|
 | Auditoria de segurança | ✅ `AUDITORIA.md`. Veredito: **seguro com ressalvas** |
-| Fork pessoal | ✅ `github.com/DreatNU-oss/thunderbird-cli`, em `~/Thunderbolt`, branch `meu` |
+| Fork pessoal | ✅ `github.com/DreatNU-oss/thunderbird-cli`, em `~/Thundirbird`, branch `meu` |
 | Dependências | ✅ Do código-fonte, nunca global. **0 vulnerabilidades** |
-| Testes | ✅ **109 passando** (57 CLI + 37 MCP + 15 ponte), 0 falhas |
+| Testes | ✅ **126 passando** (57 CLI + 37 MCP + 15 ponte + 17 extensão), 0 falhas — contagem de 21/09 |
 | Travas de segurança | ✅ Aplicadas **e verificadas contra o Thunderbird real** (ver abaixo) |
-| Servidor MCP | ✅ Registrado em `~/.claude.json` → `~/Thunderbolt/mcp/src/server.js`, 12 ferramentas |
+| Servidor MCP | ✅ Registrado em `~/.claude.json` → `~/Thundirbird/mcp/src/server.js` (caminho corrigido em 18/09), 12 ferramentas |
 | Token da ponte | ✅ `~/.config/thunderbird-cli/config.json`, permissão 600 |
-| **Extensão instalada** | ✅ **Permanente** (`app-profile`, não temporária), sobreviveu a reinício |
+| **Extensão instalada** | ✅ **Permanente** (`app-profile`, não temporária), sobreviveu a reinício. Hoje na **2.0.3** (21/09) |
 | **ThunderAI** | ✅ **Removida.** Decisão do André em 01/09 |
 | Manual de manutenção | ✅ `COMO-ATUALIZAR.md` |
 
@@ -48,16 +49,19 @@ programa da máquina; a extensão, não.
    `scripts/enviar-talita.mjs` — simulação por padrão, envia só com `--enviar`.
    Custo aceito conscientemente: era esta trava que tornava a exfiltração por
    e-mail impossível **por código**, e não apenas improvável (ver SEC-04 na
-   `AUDITORIA.md`). Desfazer: `git checkout extension/` e `npm run build:xpi`.
+   `AUDITORIA.md`). Em 21/09/2026 a liberação foi commitada na `meu`
+   (`924a64e`). Desfazer: `git revert 924a64e`, subir a versão em
+   `extension/manifest.json`, `npm run build:xpi` e reinstalar.
 2. **Exclusão permanente não existe.** Tudo vai para a Lixeira.
 3. **Exclusão de pasta bloqueada.**
 4. **Ponte protegida:** token exigido de verdade, CORS fechado, requisições de
    navegador recusadas, validação de Host, uma extensão por vez.
 5. **SEC-08 corrigido:** nome de anexo não escapa mais da pasta de destino.
 
-**Verificação de 01/09 (Fase 7), com Thunderbird conectado.** Os testes foram
-feitos com `curl` **direto na ponte** — pulando CLI e MCP —, que é exatamente o
-cenário do programa local malicioso descrito no SEC-02/SEC-03. Cada trava foi
+**Verificação de 01/09 (Fase 7), com Thunderbird conectado** — antes de o envio
+ser liberado em 03/09; a linha do `send:true` vale só como registro histórico.
+Os testes foram feitos com `curl` **direto na ponte** — pulando CLI e MCP —, que
+é exatamente o cenário do programa local malicioso descrito no SEC-02/SEC-03. Cada trava foi
 testada **com um controle**, para provar que a recusa veio da trava e não de um
 comando malformado:
 
@@ -127,9 +131,13 @@ continuar `andreschlemper@me.com`, senão o envio quebra.
   o Claude Code).
 - **Cuidado com worktrees.** A sessão de 01/09 abriu numa worktree em
   `.claude/worktrees/`, que estava no código **original do autor**, sem nenhuma
-  trava (`compose.send` presente, `test:tudo` inexistente). Trabalhar de lá teria
-  produzido uma extensão capaz de enviar sozinha. **Confira sempre
-  `git rev-parse --abbrev-ref HEAD` = `meu` antes de editar ou empacotar.**
+  trava (`test:tudo` inexistente). Trabalhar de lá teria produzido uma extensão
+  sem as travas de exclusão. Em 21/09, um pacote gerado a partir da `meu` de
+  antes do commit `924a64e` voltaria a travar o envio, porque as mudanças de
+  03/09 ainda estavam sem commit; ele foi apagado antes de ser instalado.
+  **Antes de editar ou empacotar, confira que a branch parte da `meu` atual**
+  (`git merge-base --is-ancestor meu HEAD` não pode dar erro) **e que não há
+  mudança sem commit.**
 
 ---
 
@@ -182,9 +190,9 @@ confirma a si mesmo. Mover e criar pasta, sim, são confiáveis.
 ## Comandos úteis
 
 ```bash
-cd ~/Thunderbolt
+cd ~/Thundirbird
 npm run bridge      # sobe a ponte (deixar a janela aberta)
-npm run test:tudo   # 109 testes, incluindo os das travas
+npm run test:tudo   # 126 testes, incluindo os das travas
 npm run build:xpi   # reempacota a extensão depois de editá-la
 npm run token       # gera/regenera o token da ponte
 ```

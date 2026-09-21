@@ -3,8 +3,10 @@
 Manual de manutenção da minha versão pessoal do `thunderbird-cli`.
 Escrito para eu conseguir seguir sozinho daqui a seis meses.
 
-O repositório fica em **`~/Thunderbolt`**. Tudo abaixo pressupõe que você
-abriu o terminal (ou o Claude Code) nessa pasta.
+O repositório fica em **`~/Thundirbird`**. Até setembro de 2026 ele ficava em
+`~/Thunderbolt`, pasta que não existe mais: se algum texto antigo citar esse
+caminho, troque pelo novo. Tudo abaixo pressupõe que você abriu o terminal (ou
+o Claude Code) nessa pasta.
 
 ---
 
@@ -17,7 +19,7 @@ Três peças, nesta ordem:
 2. **A ponte rodando.** Numa janela de terminal que fica aberta:
 
    ```bash
-   cd ~/Thunderbolt && npm run bridge
+   cd ~/Thundirbird && npm run bridge
    ```
 
    Enquanto essa janela estiver aberta, a ponte está de pé. Fechou, acabou.
@@ -43,20 +45,28 @@ São três passos:
 
 **1. Reempacotar**
 
+Antes, suba a versão em `extension/manifest.json` (de 2.0.3 para 2.0.4, por
+exemplo). O nome do pacote muda junto, e fica fácil conferir no Thunderbird
+qual versão está instalada.
+
 ```bash
-cd ~/Thunderbolt && npm run build:xpi
+cd ~/Thundirbird && npm run build:xpi
 ```
 
-Isso gera `dist/thunderbird-cli-2.0.0.xpi`. O `.xpi` é só um arquivo `.zip`
+Isso gera `dist/thunderbird-cli-<versão>.xpi` (em 21/09/2026, a 2.0.3). O `.xpi` é só um arquivo `.zip`
 com o `manifest.json` **na raiz** — o script já cuida disso e confere no final.
 (O erro clássico de quem faz na mão é zipar a *pasta*, criando um nível a mais.
 O script não deixa isso acontecer.)
 
+> ⚠️ **Empacote sempre a partir da `meu` atual**, com tudo commitado. Pacote
+> feito da `main` sai sem as minhas travas. Pacote feito de uma `meu` anterior
+> a 21/09/2026 volta a travar o envio que eu liberei em 03/09.
+
 **2. Reinstalar no Thunderbird**
 
-1. Thunderbird → menu **Ferramentas** → **Complementos e temas**
+1. Thunderbird → menu **Ferramentas** (ou ☰) → **Complementos e temas**
 2. Ícone de engrenagem ⚙ → **Instalar complemento de arquivo…**
-3. Escolha `~/Thunderbolt/dist/thunderbird-cli-2.0.0.xpi`
+3. Escolha `~/Thundirbird/dist/thunderbird-cli-<versão>.xpi`
 4. Confirme a substituição da versão anterior
 
 **3. Reiniciar a ponte**
@@ -90,7 +100,7 @@ eu empurrar minhas coisas para o repositório do autor por acidente.)*
 **Passo a passo:**
 
 ```bash
-cd ~/Thunderbolt
+cd ~/Thundirbird
 
 # 1. Ver o que mudou lá, sem aplicar nada ainda
 git fetch upstream
@@ -115,12 +125,17 @@ eu travei alguma coisa. Nesses casos, **a minha versão é a que vale**:
 
 | Arquivo | O que eu mudei e não pode voltar |
 |---|---|
-| `extension/manifest.json` | tirei a permissão `compose.send` |
-| `extension/src/background.js` | envio direto, exclusão permanente e exclusão de pasta bloqueados; a listagem com `sort` ordena a pasta inteira (no original, "mais novas primeiro" devolvia as mais antigas); o `tb recent` traz as mais novas de todas as pastas e respeita `--unread` e `--account` |
+| `extension/manifest.json` | a versão (2.0.3 em 21/09/2026). A permissão `compose.send` saiu em 01/09 e **voltou em 03/09, por decisão minha**: não tire de novo |
+| `extension/src/background.js` | exclusão permanente e exclusão de pasta bloqueadas; **o envio direto foi liberado em 03/09, por decisão minha** (não volte a travar `/compose`, `/reply` e `/forward`); `identityId` em `/reply` e `/forward`; a listagem com `sort` ordena a pasta inteira (no original, "mais novas primeiro" devolvia as mais antigas); o `tb recent` traz as mais novas de todas as pastas e respeita `--unread` e `--account` |
 | `bridge/bridge.js` | token exigido, CORS fechado, Origin/Referer/Host barrados |
 | `mcp/src/tools.js` | modo `send` e parâmetro `permanent` fora do catálogo |
 | `cli/src/cli.js` | `--send`, `--permanent` e `folder-delete` bloqueados |
 | `skills/thunderbird-cli/SKILL.md` | minhas regras em português |
+
+Sobre o envio, desde 03/09: a extensão envia, o CLI e o MCP continuam recusando
+(`ENVIO_BLOQUEADO`), e o envio de verdade passa pelo `scripts/enviar-talita.mjs`,
+que fala direto com a ponte e só envia com `--enviar`. A decisão e o custo
+aceito estão na `AUDITORIA.md`.
 
 Peça ao Claude Code: *"resolva o conflito mantendo minhas travas de segurança e
 me mostre o que o autor mudou"*.
@@ -149,13 +164,17 @@ git push origin meu
 A qualquer momento:
 
 ```bash
-cd ~/Thunderbolt && npm run test:tudo
+cd ~/Thundirbird && npm run test:tudo
 ```
 
-São 102 testes. Os que importam para a segurança:
+São 126 testes (57 do CLI, 37 do MCP, 15 da ponte e 17 da extensão, contagem
+de 21/09/2026). Os que importam para a segurança:
 
-- **`Travas pessoais (Fase 4)`** — envio bloqueado, exclusão permanente
-  bloqueada, exclusão de pasta bloqueada, delete indo para a Lixeira.
+- **`Travas pessoais (Fase 4)`** — exclusão permanente bloqueada, exclusão de
+  pasta bloqueada, delete indo para a Lixeira. ⚠️ Os três testes "envio direto
+  bloqueado" continuam passando, mas rodam contra uma ponte **simulada**, que
+  ainda finge bloquear. Desde 03/09 eles não dizem nada sobre a extensão de
+  verdade, que envia.
 - **`Ponte com token`** e **`bloqueio de navegador e DNS rebinding`** — a ponte
   recusa quem não tem token e recusa navegador.
 
@@ -172,9 +191,9 @@ contas reais.
 | `NAO_AUTORIZADO` | Falta o token | `npm run token` e reinicie a ponte |
 | `RECUSANDO SUBIR: nenhum token` | A ponte não sobe sem token | `npm run token` |
 | `EXTENSION_DISCONNECTED` | Thunderbird fechado, ou extensão não instalada | Abra o Thunderbird; se persistir, reinstale o `.xpi` |
-| `ENVIO_BLOQUEADO` | **Funcionando como deveria** | É a trava. Use o rascunho. |
+| `ENVIO_BLOQUEADO` | **Funcionando como deveria** | É a trava do CLI ou do MCP, que continuam sem enviar. Use o rascunho. O envio que eu liberei em 03/09 passa pelo `scripts/enviar-talita.mjs` |
 | `EXCLUSAO_PERMANENTE_BLOQUEADA` | **Funcionando como deveria** | É a trava. Vá pela Lixeira. |
-| O agente não enxerga as ferramentas | O caminho do fork mudou | O servidor MCP aponta para `~/Thunderbolt` por caminho absoluto. Se a pasta mudou de lugar, rode: `claude mcp remove thunderbird --scope user` e registre de novo com o caminho novo |
+| O agente não enxerga as ferramentas | O caminho do fork mudou | O servidor MCP aponta para `~/Thundirbird/mcp/src/server.js` por caminho absoluto (confira com `claude mcp get thunderbird`). Se a pasta mudar de lugar, rode `claude mcp remove thunderbird --scope user`, registre de novo com `claude mcp add-json -s user thunderbird '{"type":"stdio","command":"node","args":["<pasta nova>/mcp/src/server.js"],"env":{}}'` e reinicie o Claude Code |
 
 ---
 
@@ -194,7 +213,7 @@ do repositório de propósito — token não se guarda no Git.
 
 Se um dia o vaivém de abrir o terminal incomodar mais do que o risco preocupar,
 dá para criar um serviço do macOS (`launchd`) que sobe a ponte no login. Peça
-ao Claude Code: *"cria um LaunchAgent para subir a ponte do Thunderbolt no
+ao Claude Code: *"cria um LaunchAgent para subir a ponte do Thundirbird no
 login"*.
 
 Antes de fazer isso, entenda o que muda: hoje a ponte só existe quando você a
