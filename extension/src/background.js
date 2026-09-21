@@ -634,12 +634,19 @@ async function handleRequest({ method, path, body }) {
   if (path === "/recent" && method === "POST") {
     const { hours = 24, limit = 50 } = body || {};
     const since = new Date(Date.now() - hours * 60 * 60 * 1000);
-    const result = await collectMessages(
-      () => messenger.messages.query({ fromDate: since }), limit
+    // A consulta devolve pasta por pasta. Cortar no limite antes de ordenar
+    // trazia as primeiras achadas, não as mais novas: junta a janela inteira,
+    // ordena e só então corta.
+    const all = await collectMessages(
+      () => messenger.messages.query({ fromDate: since }), Infinity
     );
-    result.messages.sort((a, b) => new Date(b.date) - new Date(a.date));
-    result.since = since.toISOString();
-    return result;
+    all.messages.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const messages = all.messages.slice(0, limit);
+    return {
+      messages, total: messages.length, offset: 0,
+      hasMore: all.messages.length > limit,
+      since: since.toISOString(),
+    };
   }
 
   // ─── Contacts search (must be before /contacts/:id) ─────────────
