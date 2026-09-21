@@ -116,7 +116,7 @@ eu travei alguma coisa. Nesses casos, **a minha versão é a que vale**:
 | Arquivo | O que eu mudei e não pode voltar |
 |---|---|
 | `extension/manifest.json` | tirei a permissão `compose.send` |
-| `extension/src/background.js` | envio direto, exclusão permanente e exclusão de pasta bloqueados; a listagem com `sort` ordena a pasta inteira (no original, "mais novas primeiro" devolvia as mais antigas) |
+| `extension/src/background.js` | envio direto, exclusão permanente e exclusão de pasta bloqueados; a listagem com `sort` ordena a pasta inteira (no original, "mais novas primeiro" devolvia as mais antigas); o `tb recent` traz as mais novas de todas as pastas e respeita `--unread` e `--account` |
 | `bridge/bridge.js` | token exigido, CORS fechado, Origin/Referer/Host barrados |
 | `mcp/src/tools.js` | modo `send` e parâmetro `permanent` fora do catálogo |
 | `cli/src/cli.js` | `--send`, `--permanent` e `folder-delete` bloqueados |
