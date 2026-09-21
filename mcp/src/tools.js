@@ -126,7 +126,7 @@ export const tools = [
   {
     name: "email_list",
     description:
-      "List messages in a specific folder. Use email_folders first to get folder IDs. Supports pagination and sorting.",
+      "List messages in a specific folder. Use email_folders first to get folder IDs. Supports pagination and sorting; pass sort: 'date' to get the newest first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -140,12 +140,13 @@ export const tools = [
         sort: {
           type: "string",
           enum: ["date", "from", "subject", "size"],
-          description: "Sort field",
+          description:
+            "Sort field. Sorts the whole folder, then applies offset/limit. Without it, messages come in the folder's storage order (usually oldest first)",
         },
         sortOrder: {
           type: "string",
           enum: ["asc", "desc"],
-          description: "Sort direction",
+          description: "Sort direction when sort is set (default: desc)",
         },
         limit: { type: "number", description: "Max results", default: 25 },
       },

@@ -256,24 +256,35 @@ async function handleRequest({ method, path, body }) {
             offset = 0, sort, sortOrder = "desc", flagged } = body || {};
     const folder = await messenger.folders.get(folderId, false);
     if (!folder) return { error: "Folder not found" };
-    const result = await collectMessages(
-      () => messenger.messages.list(folder), limit,
-      { unreadOnly, flaggedOnly: flagged || false, offset }
-    );
+    const filters = { unreadOnly, flaggedOnly: flagged || false };
 
-    // Sort results if requested
-    if (sort) {
-      const dir = sortOrder === "asc" ? 1 : -1;
-      result.messages.sort((a, b) => {
-        if (sort === "date") return dir * (new Date(a.date) - new Date(b.date));
-        if (sort === "from") return dir * (a.author || "").localeCompare(b.author || "");
-        if (sort === "subject") return dir * (a.subject || "").localeCompare(b.subject || "");
-        if (sort === "size") return dir * ((a.size || 0) - (b.size || 0));
-        return 0;
-      });
+    // Sem `sort`: lê só as páginas necessárias, na ordem em que a pasta
+    // guarda as mensagens (em geral, da mais antiga para a mais nova).
+    if (!sort) {
+      return await collectMessages(
+        () => messenger.messages.list(folder), limit, { ...filters, offset }
+      );
     }
 
-    return result;
+    // Com `sort`: ordena a pasta inteira e só depois aplica offset e limite.
+    // Ordenar só as primeiras `limit` guardadas fazia "mais novas primeiro"
+    // devolver as mais antigas.
+    const all = await collectMessages(
+      () => messenger.messages.list(folder), Infinity, filters
+    );
+    const dir = sortOrder === "asc" ? 1 : -1;
+    all.messages.sort((a, b) => {
+      if (sort === "date") return dir * (new Date(a.date) - new Date(b.date));
+      if (sort === "from") return dir * (a.author || "").localeCompare(b.author || "");
+      if (sort === "subject") return dir * (a.subject || "").localeCompare(b.subject || "");
+      if (sort === "size") return dir * ((a.size || 0) - (b.size || 0));
+      return 0;
+    });
+    const messages = all.messages.slice(offset, offset + limit);
+    return {
+      messages, total: messages.length, offset,
+      hasMore: offset + messages.length < all.messages.length,
+    };
   }
 
   // ─── Read batch ─────────────────────────────────────────────────

@@ -75,8 +75,9 @@ tb list <folderId> [options]
   --unread                 # unread only
   --flagged                # flagged only
   --offset <n>             # skip first N (pagination)
-  --sort <field>           # date | from | subject | size
-  --sort-order <dir>       # asc | desc
+  --sort <field>           # date | from | subject | size — sorts the whole folder
+                           # (without it: storage order, usually oldest first)
+  --sort-order <dir>       # asc | desc (default: desc)
   -l, --limit <n>          # max results (default: 25)
 ```
 

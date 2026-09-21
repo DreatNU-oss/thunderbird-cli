@@ -281,8 +281,8 @@ program
   .option("--unread", "unread only")
   .option("--flagged", "flagged only")
   .option("--offset <n>", "skip first N messages")
-  .option("--sort <field>", "sort by: date|from|subject|size")
-  .option("--sort-order <dir>", "sort direction: asc|desc")
+  .option("--sort <field>", "sort the whole folder by: date|from|subject|size (default: storage order, usually oldest first)")
+  .option("--sort-order <dir>", "sort direction: asc|desc (default: desc)")
   .option("-l, --limit <n>", "max results", "25")
   .action(run(async (folderId, opts) => {
     const g = program.opts();
