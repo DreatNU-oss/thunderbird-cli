@@ -501,7 +501,6 @@ async function handleRequest({ method, path, body }) {
     const { to, cc, bcc, subject, body: msgBody, isHTML = false,
             identityId, send = false, draft = false, open = false,
             priority } = body;
-    if (send) return ERRO_ENVIO_BLOQUEADO;   // trava pessoal — nem abre a janela
     const details = {};
     if (to) details.to = Array.isArray(to) ? to : [to];
     if (cc) details.cc = Array.isArray(cc) ? cc : [cc];
@@ -512,6 +511,10 @@ async function handleRequest({ method, path, body }) {
     if (identityId) details.identityId = identityId;
     if (priority) details.customHeaders = [{ name: "X-Priority", value: priorityToValue(priority) }];
     const tab = await messenger.compose.beginNew(null, details);
+    if (send) {
+      await messenger.compose.sendMessage(tab.id, { mode: "sendNow" });
+      return { success: true, action: "sent" };
+    }
     if (open) {
       return { success: true, action: "draft_opened", tabId: tab.id };
     }
@@ -524,13 +527,16 @@ async function handleRequest({ method, path, body }) {
   // ─── Reply ──────────────────────────────────────────────────────
 
   if (path === "/reply" && method === "POST") {
-    const { messageId, body: replyBody, replyAll = false,
+    const { messageId, body: replyBody, replyAll = false, identityId,
             send = false, draft = false, open = false } = body;
-    if (send) return ERRO_ENVIO_BLOQUEADO;   // trava pessoal — nem abre a janela
     const type = replyAll ? "replyToAll" : "replyToSender";
-    const tab = await messenger.compose.beginReply(messageId, type, {
-      isPlainText: true, plainTextBody: replyBody,
-    });
+    const detalhesResposta = { isPlainText: true, plainTextBody: replyBody };
+    if (identityId) detalhesResposta.identityId = identityId;
+    const tab = await messenger.compose.beginReply(messageId, type, detalhesResposta);
+    if (send) {
+      await messenger.compose.sendMessage(tab.id, { mode: "sendNow" });
+      return { success: true, action: "sent" };
+    }
     if (open) {
       return { success: true, action: "draft_opened", tabId: tab.id };
     }
@@ -543,13 +549,21 @@ async function handleRequest({ method, path, body }) {
   // ─── Forward ────────────────────────────────────────────────────
 
   if (path === "/forward" && method === "POST") {
-    const { messageId, to, body: fwdBody,
+    const { messageId, to, body: fwdBody, identityId,
             send = false, draft = false, open = false } = body;
-    if (send) return ERRO_ENVIO_BLOQUEADO;   // trava pessoal — nem abre a janela
+    const detalhesEnc = {
+      to: Array.isArray(to) ? to : [to],
+      isPlainText: true,
+      plainTextBody: fwdBody || "",
+    };
+    if (identityId) detalhesEnc.identityId = identityId;
     const tab = await messenger.compose.beginForward(
-      messageId, "forwardAsAttachment",
-      { to: Array.isArray(to) ? to : [to], isPlainText: true, plainTextBody: fwdBody || "" }
+      messageId, "forwardAsAttachment", detalhesEnc
     );
+    if (send) {
+      await messenger.compose.sendMessage(tab.id, { mode: "sendNow" });
+      return { success: true, action: "sent" };
+    }
     if (open) {
       return { success: true, action: "draft_opened", tabId: tab.id };
     }

@@ -36,8 +36,19 @@ Ficam em `extension/src/background.js`, o último ponto antes do Thunderbird
 agir. A auditoria mostrou que a ponte e o MCP podem ser contornados por outro
 programa da máquina; a extensão, não.
 
-1. **Envio direto impossível.** Tudo vira rascunho. `compose.send` foi removida
-   do manifesto, então o próprio Thunderbird recusa enviar.
+1. ~~**Envio direto impossível.**~~ **REMOVIDA EM 03/09/2026, a pedido do André.**
+   Até essa data tudo virava rascunho e `compose.send` estava fora do manifesto.
+   Hoje o agente **envia**: a permissão `compose.send` foi devolvida e as três
+   linhas `if (send) return ERRO_ENVIO_BLOQUEADO;` saíram de `/compose`,
+   `/reply` e `/forward`. Extensão na **2.0.1**. Junto veio o suporte a
+   `identityId` em `/reply` e `/forward`, para a mensagem sair da conta certa
+   (`id4` = climedsch) em vez da padrão (Yahoo).
+   Motivo: ele precisava que o agente enviasse quando pedisse, e o classificador
+   do Claude Code bloqueava o caminho alternativo. O envio na prática é feito por
+   `scripts/enviar-talita.mjs` — simulação por padrão, envia só com `--enviar`.
+   Custo aceito conscientemente: era esta trava que tornava a exfiltração por
+   e-mail impossível **por código**, e não apenas improvável (ver SEC-04 na
+   `AUDITORIA.md`). Desfazer: `git checkout extension/` e `npm run build:xpi`.
 2. **Exclusão permanente não existe.** Tudo vai para a Lixeira.
 3. **Exclusão de pasta bloqueada.**
 4. **Ponte protegida:** token exigido de verdade, CORS fechado, requisições de

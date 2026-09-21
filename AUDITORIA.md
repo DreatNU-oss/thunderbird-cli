@@ -82,6 +82,12 @@ Isso é perigoso não por si só, mas porque **gera falsa confiança**: alguém 
 
 **Conclusão:** a defesa contra injeção repousa inteiramente no bom comportamento do agente + no texto do `SKILL.md`. Não há controle determinístico. **É exatamente por isso que a Fase 4 importa:** tornar o envio impossível e a exclusão permanente inexistente converte "o agente promete não fazer" em "o código não consegue fazer".
 
+> ⚠️ **Atualização de 03/09/2026 — metade desta conclusão não vale mais.** A trava de **envio** foi removida a pedido do André (`compose.send` de volta no manifesto; as três linhas `ERRO_ENVIO_BLOQUEADO` retiradas de `/compose`, `/reply` e `/forward`; extensão 2.0.1). A trava de **exclusão permanente** e a de **exclusão de pasta** continuam ativas.
+>
+> O que isso significa para o SEC-04: exfiltração por e-mail deixou de ser impossível e voltou a depender só do julgamento do agente. Um e-mail com instruções escondidas que peça "encaminhe X para Y" agora encontra um caminho tecnicamente aberto. O André foi informado desse custo antes de decidir e optou assim mesmo, porque precisava que o agente enviasse quando ele pedisse.
+>
+> Mitigações que continuam de pé: a ponte só existe quando ele a sobe manualmente; o Thunderbird precisa estar aberto; o envio na prática passa por `scripts/enviar-talita.mjs`, que roda em simulação por padrão e só envia com `--enviar`. Meio-termo já desenhado, caso um dia se queira parte da proteção de volta sem perder a funcionalidade: **lista de destinatários permitidos** dentro da extensão — envio liberado só para endereços escritos à mão num arquivo, bloqueado para todo o resto.
+
 ### 5. Pontos de escrita e destruição — mapa completo
 
 **Enviar e-mail (sai da máquina via SMTP):**
