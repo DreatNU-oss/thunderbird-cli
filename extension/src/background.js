@@ -632,13 +632,16 @@ async function handleRequest({ method, path, body }) {
   // ─── Recent ─────────────────────────────────────────────────────
 
   if (path === "/recent" && method === "POST") {
-    const { hours = 24, limit = 50 } = body || {};
+    const { hours = 24, limit = 50, unreadOnly, accountId } = body || {};
     const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+    const q = { fromDate: since };
+    if (unreadOnly) q.unread = true;
+    if (accountId) q.accountId = accountId;
     // A consulta devolve pasta por pasta. Cortar no limite antes de ordenar
     // trazia as primeiras achadas, não as mais novas: junta a janela inteira,
     // ordena e só então corta.
     const all = await collectMessages(
-      () => messenger.messages.query({ fromDate: since }), Infinity
+      () => messenger.messages.query(q), Infinity
     );
     all.messages.sort((a, b) => new Date(b.date) - new Date(a.date));
     const messages = all.messages.slice(0, limit);

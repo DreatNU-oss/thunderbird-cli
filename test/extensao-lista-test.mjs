@@ -270,9 +270,16 @@ function criarMessengerConsulta() {
 
   return {
     messages: {
+      // Como no Thunderbird: fromDate, unread (true = só não lidas,
+      // false = só lidas) e accountId (um ou vários).
       async query(info) {
         const desde = info?.fromDate ? info.fromDate.getTime() : -Infinity;
-        return pagina(NA_ORDEM_DA_CONSULTA.filter((m) => m.date.getTime() >= desde), 0);
+        const contas = info?.accountId ? [].concat(info.accountId) : null;
+        return pagina(NA_ORDEM_DA_CONSULTA.filter((m) =>
+          m.date.getTime() >= desde &&
+          (typeof info?.unread !== "boolean" || m.read === !info.unread) &&
+          (!contas || contas.includes(m.folder.accountId))
+        ), 0);
       },
       async continueList(listaId) {
         if (!listas.has(listaId)) throw new Error(`lista desconhecida: ${listaId}`);
@@ -319,6 +326,18 @@ console.log("\nMensagens recentes (/recent)\n");
   teste("hours define a janela (2 h: só as 10 da última hora)",
     igual(ids, [1010, 1009, 1008, 1007, 1006, 1005, 1004, 1003, 1002, 1001]),
     `veio ${JSON.stringify(ids)}`);
+}
+
+{
+  const { ids } = await recentes({ hours: 24, limit: 3, unreadOnly: true });
+  teste("--unread: só as não lidas (ids ímpares), das mais novas",
+    igual(ids, [1009, 1007, 1005]), `veio ${JSON.stringify(ids)}`);
+}
+
+{
+  const { ids } = await recentes({ hours: 24, limit: 3, accountId: "account3" });
+  teste("--account: só a conta pedida (pasta A, account3)",
+    igual(ids, [150, 149, 148]), `veio ${JSON.stringify(ids)}`);
 }
 
 console.log(`\n${passou} passaram, ${falhou} falharam\n`);
