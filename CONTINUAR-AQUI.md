@@ -23,7 +23,7 @@ duas dependem do André no teclado, não do agente.
 | Auditoria de segurança | ✅ `AUDITORIA.md`. Veredito: **seguro com ressalvas** |
 | Fork pessoal | ✅ `github.com/DreatNU-oss/thunderbird-cli`, em `~/Thundirbird`, branch `meu` |
 | Dependências | ✅ Do código-fonte, nunca global. **0 vulnerabilidades** |
-| Testes | ✅ **126 passando** (57 CLI + 37 MCP + 15 ponte + 17 extensão), 0 falhas — contagem de 21/09 |
+| Testes | ✅ **129 passando** (59 CLI + 38 MCP + 15 ponte + 17 extensão), 0 falhas — contagem de 21/09 |
 | Travas de segurança | ✅ Aplicadas **e verificadas contra o Thunderbird real** (ver abaixo) |
 | Servidor MCP | ✅ Registrado em `~/.claude.json` → `~/Thundirbird/mcp/src/server.js` (caminho corrigido em 18/09), 12 ferramentas |
 | Token da ponte | ✅ `~/.config/thunderbird-cli/config.json`, permissão 600 |
@@ -192,7 +192,7 @@ confirma a si mesmo. Mover e criar pasta, sim, são confiáveis.
 ```bash
 cd ~/Thundirbird
 npm run bridge      # sobe a ponte (deixar a janela aberta)
-npm run test:tudo   # 126 testes, incluindo os das travas
+npm run test:tudo   # 129 testes, incluindo os das travas
 npm run build:xpi   # reempacota a extensão depois de editá-la
 npm run token       # gera/regenera o token da ponte
 ```

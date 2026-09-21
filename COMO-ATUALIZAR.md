@@ -167,14 +167,16 @@ A qualquer momento:
 cd ~/Thundirbird && npm run test:tudo
 ```
 
-São 126 testes (57 do CLI, 37 do MCP, 15 da ponte e 17 da extensão, contagem
+São 129 testes (59 do CLI, 38 do MCP, 15 da ponte e 17 da extensão, contagem
 de 21/09/2026). Os que importam para a segurança:
 
-- **`Travas pessoais (Fase 4)`** — exclusão permanente bloqueada, exclusão de
-  pasta bloqueada, delete indo para a Lixeira. ⚠️ Os três testes "envio direto
-  bloqueado" continuam passando, mas rodam contra uma ponte **simulada**, que
-  ainda finge bloquear. Desde 03/09 eles não dizem nada sobre a extensão de
-  verdade, que envia.
+- **`Travas pessoais (Fase 4)`** — o CLI recusa `--send` em compose, reply e
+  forward, e nenhum envio chega à ponte (um controle prova que o CLI alcança a
+  ponte); exclusão permanente bloqueada, exclusão de pasta bloqueada, delete
+  indo para a Lixeira. No `test:mcp`, o mesmo para o MCP: `mode: "send"`
+  recusado e nenhum envio chegando à ponte. As pontes simuladas enviam, como a
+  extensão real desde 03/09, então esses testes só passam se a recusa do CLI e
+  do MCP estiver lá de verdade.
 - **`Ponte com token`** e **`bloqueio de navegador e DNS rebinding`** — a ponte
   recusa quem não tem token e recusa navegador.
 

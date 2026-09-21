@@ -23,6 +23,10 @@ let passed = 0,
   failed = 0;
 const failures = [];
 
+// Envios que chegaram à ponte simulada. Ela envia como a extensão real desde
+// 03/09/2026 (commit 924a64e); a recusa de envio vive no servidor MCP.
+const enviosNaPonte = [];
+
 // ─── Mock bridge handler ───────────────────────────────────────────
 
 function handle({ method, path, body }) {
@@ -122,10 +126,14 @@ function handle({ method, path, body }) {
     return { error: "EXCLUSAO_DE_PASTA_BLOQUEADA", code: "EXCLUSAO_DE_PASTA_BLOQUEADA" };
   if (path === "/messages/archive") return { success: true, archived: (body?.messageIds || []).length };
   if (path === "/messages/update") return { success: true };
-  if (path === "/compose" || path === "/reply" || path === "/forward")
-    return body?.send
-      ? { error: "ENVIO_BLOQUEADO", code: "ENVIO_BLOQUEADO" }
-      : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
+  // Como a extensão real desde 03/09: com send, envia.
+  if (path === "/compose" || path === "/reply" || path === "/forward") {
+    if (body?.send) {
+      enviosNaPonte.push(path);
+      return { success: true, action: "sent" };
+    }
+    return { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
+  }
   if (path === "/stats")
     return { totalAccounts: 1, totalUnread: 5, totalMessages: 100, accounts: [] };
   if (path === "/sync") return { success: true, synced: body?.all ? "all" : body?.folderId };
@@ -426,6 +434,7 @@ test(
   await client.callTool("email_forward", { messageId: 1, to: "c@d.com", mode: "send" }),
   (r) => r.code === "ENVIO_BLOQUEADO" && !r.success
 );
+test("nenhum envio chegou à ponte pelo MCP", enviosNaPonte, (e) => e.length === 0);
 
 test(
   "email_forward",

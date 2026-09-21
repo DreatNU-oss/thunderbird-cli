@@ -2,19 +2,26 @@
 /**
  * Quick test — single process, no subprocess spawning.
  * Directly imports and tests the HTTP client against a mock bridge.
+ *
+ * Exceção (acréscimo pessoal): a trava de envio do CLI roda o cli.js de
+ * verdade, em subprocesso, contra a ponte simulada.
  */
 
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "crypto";
+import { execFile } from "child_process";
+import { fileURLToPath } from "url";
 import { caminhoSeguroDeAnexo } from "../cli/src/client.js";
 
 const PORT = 19700;
 const WS_PORT = 19701;
 let passed = 0, failed = 0;
 
-// Respostas das travas pessoais — iguais às de extension/src/background.js.
-const BLOQUEIO_ENVIO = { error: "ENVIO_BLOQUEADO: esta versão nunca envia e-mail sozinha.", code: "ENVIO_BLOQUEADO" };
+// Respostas das travas pessoais que continuam em extension/src/background.js.
+// O envio foi liberado lá em 03/09/2026 (commit 924a64e): a ponte simulada
+// envia, como a extensão real, e anota cada envio que recebe.
+const enviosNaPonte = [];
 const BLOQUEIO_PERMANENTE = { error: "EXCLUSAO_PERMANENTE_BLOQUEADA: esta versão nunca apaga em definitivo.", code: "EXCLUSAO_PERMANENTE_BLOQUEADA" };
 const BLOQUEIO_PASTA = { error: "EXCLUSAO_DE_PASTA_BLOQUEADA: esta versão nunca apaga pastas.", code: "EXCLUSAO_DE_PASTA_BLOQUEADA" };
 
@@ -48,10 +55,11 @@ function handle({ method, path, body }) {
   if (path?.match(/^\/messages\/\d+$/) && method === "GET") return { id: 1, subject: "T", author: "a@b", date: "2026-04-01", read: false, flagged: false, junk: false, size: 100, tags: ["$l1"], folder: null, parts: { text: "Hello world", html: "", attachments: [] } };
   if (path === "/tags") return [{ key: "$l1", tag: "Important", color: "#FF0000" }];
   if (path === "/tags/create") return { success: true, ...body };
-  // A ponte simulada espelha as travas pessoais de extension/src/background.js.
-  if (path === "/compose") return body?.send ? BLOQUEIO_ENVIO : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
-  if (path === "/reply") return body?.send ? BLOQUEIO_ENVIO : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
-  if (path === "/forward") return body?.send ? BLOQUEIO_ENVIO : { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
+  // Como a extensão real desde 03/09: com send, envia.
+  if (path === "/compose" || path === "/reply" || path === "/forward") {
+    if (body?.send) { enviosNaPonte.push(path); return { success: true, action: "sent" }; }
+    return { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
+  }
   if (path === "/stats") return { totalAccounts: 1, totalUnread: 5, totalMessages: 100, accounts: [] };
   if (path === "/recent") return { messages: [], total: 0, since: new Date().toISOString() };
   if (path === "/contacts/search") return [{ id: "c1", name: "John", email: "j@e.com" }];
@@ -106,6 +114,19 @@ async function startBridge() {
 }
 
 // ─── Direct HTTP test (no CLI subprocess) ──────────────────────────
+
+// Roda o cli.js de verdade apontado para a ponte simulada, com token de teste.
+const CLI = fileURLToPath(new URL("../cli/src/cli.js", import.meta.url));
+function rodarCli(args) {
+  const env = { ...process.env, TB_BRIDGE_HOST: "127.0.0.1", TB_BRIDGE_PORT: String(PORT), TB_AUTH_TOKEN: "token-de-teste" };
+  return new Promise((resolve) => {
+    execFile(process.execPath, [CLI, ...args], { env, timeout: 30000 }, (erro, stdout, stderr) => {
+      let json = null;
+      try { json = JSON.parse(stdout || stderr); } catch {}
+      resolve({ saida: erro ? erro.code : 0, json });
+    });
+  });
+}
 
 async function httpCall(method, path, body = null) {
   const url = `http://127.0.0.1:${PORT}${path}`;
@@ -179,9 +200,14 @@ test("POST /reply", await httpCall("POST", "/reply", { messageId: 1, body: "Than
 test("POST /forward", await httpCall("POST", "/forward", { messageId: 1, to: "c@d", body: "FYI" }), r => r.success);
 
 console.log("\n\x1b[1mTravas pessoais (Fase 4)\x1b[0m");
-test("envio direto bloqueado no compose", await httpCall("POST", "/compose", { to: "a@b", body: "Hi", send: true }), r => r.code === "ENVIO_BLOQUEADO" && !r.success);
-test("envio direto bloqueado no reply", await httpCall("POST", "/reply", { messageId: 1, body: "Hi", send: true }), r => r.code === "ENVIO_BLOQUEADO" && !r.success);
-test("envio direto bloqueado no forward", await httpCall("POST", "/forward", { messageId: 1, to: "c@d", send: true }), r => r.code === "ENVIO_BLOQUEADO" && !r.success);
+// A extensão envia desde 03/09; a trava de envio que sobrou vive no CLI (e no
+// servidor MCP, ver mcp-test.mjs). O controle prova que o CLI alcança a ponte;
+// sem ele, "nenhum envio chegou" passaria até com o CLI desconectado.
+test("CLI alcança a ponte (controle: compose sem --send vira rascunho)", await rodarCli(["compose", "--to", "a@b.com", "--subject", "Oi", "--body", "Oi"]), r => r.saida === 0 && r.json?.data?.action === "draft_saved");
+test("CLI recusa compose --send", await rodarCli(["compose", "--to", "a@b.com", "--subject", "Oi", "--body", "Oi", "--send"]), r => r.saida === 1 && r.json?.code === "ENVIO_BLOQUEADO");
+test("CLI recusa reply --send", await rodarCli(["reply", "1", "--body", "Oi", "--send"]), r => r.saida === 1 && r.json?.code === "ENVIO_BLOQUEADO");
+test("CLI recusa forward --send", await rodarCli(["forward", "1", "--to", "c@d.com", "--send"]), r => r.saida === 1 && r.json?.code === "ENVIO_BLOQUEADO");
+test("nenhum envio chegou à ponte pelo CLI", enviosNaPonte, e => e.length === 0);
 test("exclusao permanente bloqueada", await httpCall("POST", "/messages/delete", { messageIds: [1], permanent: true }), r => r.code === "EXCLUSAO_PERMANENTE_BLOQUEADA" && !r.success);
 test("delete normal vai para a Lixeira", await httpCall("POST", "/messages/delete", { messageIds: [1] }), r => r.success && r.destino === "Lixeira");
 test("exclusao de pasta bloqueada", await httpCall("POST", "/folders/delete", { folderId: "f1" }), r => r.code === "EXCLUSAO_DE_PASTA_BLOQUEADA" && !r.success);
