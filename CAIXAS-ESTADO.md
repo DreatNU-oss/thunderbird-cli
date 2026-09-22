@@ -114,6 +114,58 @@ convites de reunião com o nome dele), Helena (19, tem "ação necessária" de
 rodada) e Banco do Brasil (9, inclui aviso FATCA/CRS). Se ele sentir falta,
 estão no Spam, recuperáveis.
 
+**18/09/2026:**
+- **Tirar a marca de spam dos 5 e-mails da Unimed Três Corações** da semana de
+  14/09 (Luciana ×2, Daniele, Lorenza, Verlene; 8 cópias entre iCloud e
+  climedsch). O Thunderbird tinha marcado esses e-mails como spam sem tirá-los
+  da Entrada, e a busca padrão, que pula spam, os escondia. Naquela semana, 52
+  dos 92 e-mails estavam com essa marca.
+- **Corrigir o caminho do servidor MCP** no `~/.claude.json` para
+  `~/Thundirbird/mcp/src/server.js`, porque a pasta `~/Thunderbolt` não existe
+  mais.
+- **Corrigir o roteiro da triagem, sem religar a agenda.** Em
+  `~/.claude/scheduled-tasks/triagem-email/SKILL.md`, `~/Thunderbolt` virou
+  `~/Thundirbird` nos 6 lugares, e a busca do passo 3 passou a usar
+  `"includeJunk":true`, descartando só o que já está em pasta de spam (`/Bulk`,
+  `[Gmail]/Spam`). A tarefa não está na lista de agendadas e continua assim até
+  o André mandar religar.
+- **Baixar para `~/Downloads` e resumir** a planilha de relatórios contábeis
+  07/2026 (e-mail da Daniele, 14/09) e as 3 planilhas de sinistralidade de
+  agosto (e-mail da Catia, 18/09: Intercâmbio.xlsx, Planilha Empresarial Pré
+  Pgto 2026.xls, Planilha Plano Particular 2026.xls).
+
+**21/09/2026:**
+- **Tirar a marca de spam do e-mail da Catia Naves** (Unimed TC, 21/09 às 8h49),
+  que encaminhava o pedido da ASTA para o André assinar os aditivos 0079 e 0080
+  da São Marco (reajuste contratual). O e-mail passava em SPF, DKIM e DMARC, mas
+  o Thunderbird o marcou como spam na Entrada do iCloud. Foi só esse: há uma
+  cópia só, porque o endereço `dir-adm@unimedtc.coop.br` não está configurado no
+  Thunderbird.
+- **Juntar a correção da listagem por data com a liberação do envio de 03/09
+  numa extensão 2.0.2.** A liberação do envio é decisão do André de 03/09,
+  registrada na `AUDITORIA.md`; as alterações estavam sem commit desde então, e
+  o classificador de segurança do Claude Code impediu o agente de commitá-las. A
+  correção fez `tb list`/`email_list` com `sort` ordenarem a pasta inteira
+  (antes, "mais novas primeiro" devolvia as mais antigas).
+- **O próprio André commitou as 4 alterações de 03/09** (`924a64e`:
+  AUDITORIA.md, CONTINUAR-AQUI.md, extension/manifest.json e
+  extension/src/background.js), deixando de fora os arquivos soltos
+  `scripts/enviar-talita.mjs` e `NAO-LIDAS-03-09.txt`. O agente pôs a correção
+  por cima (`f219a0f`) e subiu a versão para 2.0.2 (`6dc423d`). Instalada e
+  conferida ao vivo no mesmo dia.
+- **Corrigir junto, na extensão 2.0.3, os filtros `--unread` e `--account` do
+  `tb recent`**, que a extensão ignorava, além da ordenação, que trazia as
+  primeiras mensagens achadas e não as mais novas (`c456a39`, `c02eab3`,
+  `e8bf80c`). **O agente faz o merge na `meu` e gera o pacote; o André
+  instala.** Instalada e conferida ao vivo.
+- **Atualizar o COMO-ATUALIZAR.md e o CONTINUAR-AQUI.md** (`57bb887`): caminho
+  `~/Thundirbird`, envio liberado registrado na tabela de conflitos e desfazer
+  via `git revert 924a64e`. Só documentação.
+- **Testar a trava de envio onde ela existe, no CLI e no MCP** (`1e10859`). As
+  pontes simuladas passaram a enviar como a extensão real, e os 3 testes "envio
+  direto bloqueado", que só testavam a simulação, foram trocados por testes que
+  rodam o `cli.js` de verdade. O MCP ganhou a mesma checagem. São 129 testes.
+
 ---
 
 ## Armadilhas da ferramenta — ler antes de agir
@@ -157,7 +209,7 @@ estão no Spam, recuperáveis.
 ## Como retomar
 
 ```bash
-cd ~/Thunderbolt && npm run bridge     # subir a ponte (deixar aberta)
+cd ~/Thundirbird && npm run bridge    # subir a ponte (deixar aberta)
 node cli/src/cli.js health             # confirmar: thunderbird: true
 ```
 
