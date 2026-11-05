@@ -18,14 +18,10 @@ import { parseRelativeDate } from "./client.js";
 // Estas travas são a primeira barreira, para o agente receber um erro claro
 // e nem chegar a tentar. A barreira final está em extension/src/background.js,
 // que é o último ponto antes do Thunderbird agir. Ver AUDITORIA.md.
-
-const ERRO_ENVIO_BLOQUEADO = {
-  error:
-    "ENVIO_BLOQUEADO: esta versão nunca envia e-mail sozinha. Nada foi " +
-    "enviado. Refaça a chamada sem mode='send': a mensagem será salva em " +
-    "Rascunhos, e o André revisa e envia pelo Thunderbird.",
-  code: "ENVIO_BLOQUEADO",
-};
+//
+// 04/11/2026: a trava de ENVIO foi retirada a pedido do André — mode='send'
+// em compose/reply/forward envia de verdade. As travas de exclusão
+// permanente e de exclusão de pasta continuam.
 
 const ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA = {
   error:
@@ -229,7 +225,7 @@ export const tools = [
   {
     name: "email_compose",
     description:
-      "Compose a new email. This build CANNOT send: every message becomes a draft for the human to review and send from Thunderbird. mode='draft' (default) saves silently to Drafts; mode='open' opens the compose window. There is no send mode — do not offer to send, and tell the user the draft is waiting in Drafts.",
+      "Compose a new email. mode='draft' (default) saves silently to Drafts; mode='open' opens the compose window; mode='send' sends immediately. Only use mode='send' when the user explicitly asked to send it; otherwise leave the draft and say where it is. Always set `from` to the identity the user wants as sender — the default identity is the Yahoo one.",
     inputSchema: {
       type: "object",
       properties: {
@@ -257,8 +253,8 @@ export const tools = [
         },
         mode: {
           type: "string",
-          enum: ["draft", "open"],
-          description: "draft (default, saves silently) or open (compose window). Sending is not available in this build.",
+          enum: ["draft", "open", "send"],
+          description: "draft (default, saves silently), open (compose window) or send (sends immediately — only when the user explicitly asked to send).",
           default: "draft",
         },
       },
@@ -276,8 +272,8 @@ export const tools = [
       if (args.from) payload.identityId = args.from;
       if (args.priority) payload.priority = args.priority;
       const mode = args.mode || "draft";
-      if (mode === "send") return ERRO_ENVIO_BLOQUEADO;
-      if (mode === "open") payload.open = true;
+      if (mode === "send") payload.send = true;
+      else if (mode === "open") payload.open = true;
       else payload.draft = true;
       return await api("POST", "/compose", payload);
     },
@@ -287,17 +283,22 @@ export const tools = [
   {
     name: "email_reply",
     description:
-      "Reply to a message. This build CANNOT send: the reply is always saved as a draft for the human to review and send from Thunderbird. Set replyAll=true to reply to all recipients.",
+      "Reply to a message. mode='draft' (default), 'open' or 'send' (sends immediately — only when the user explicitly asked to send). Set replyAll=true to reply to all recipients. Set `from` to the identity that received the original message: without it the reply goes out from the default identity (Yahoo).",
     inputSchema: {
       type: "object",
       properties: {
         messageId: { type: "number", description: "Message ID to reply to" },
         body: { type: "string", description: "Reply body" },
         replyAll: { type: "boolean", description: "Reply to all recipients" },
+        from: {
+          type: "string",
+          description:
+            "Identity ID to send from. Use the identity of the account that received the message (id2 = andreschlemper@me.com, id1 = dreatnu@yahoo.com is the default).",
+        },
         mode: {
           type: "string",
-          enum: ["draft", "open"],
-          description: "draft (default) or open. Sending is not available in this build.",
+          enum: ["draft", "open", "send"],
+          description: "draft (default), open or send (sends immediately — only when the user explicitly asked to send).",
           default: "draft",
         },
       },
@@ -309,9 +310,10 @@ export const tools = [
         body: args.body,
         replyAll: args.replyAll || false,
       };
+      if (args.from) payload.identityId = args.from;
       const mode = args.mode || "draft";
-      if (mode === "send") return ERRO_ENVIO_BLOQUEADO;
-      if (mode === "open") payload.open = true;
+      if (mode === "send") payload.send = true;
+      else if (mode === "open") payload.open = true;
       else payload.draft = true;
       return await api("POST", "/reply", payload);
     },
@@ -321,17 +323,22 @@ export const tools = [
   {
     name: "email_forward",
     description:
-      "Forward a message to a new recipient. This build CANNOT send: the forward is always saved as a draft for the human to review and send from Thunderbird.",
+      "Forward a message to a new recipient. mode='draft' (default), 'open' or 'send' (sends immediately — only when the user explicitly asked to send). Set `from` to the identity that received the original message.",
     inputSchema: {
       type: "object",
       properties: {
         messageId: { type: "number", description: "Message ID to forward" },
         to: { type: "string", description: "Recipient address" },
         body: { type: "string", description: "Optional additional text" },
+        from: {
+          type: "string",
+          description:
+            "Identity ID to send from. Use the identity of the account that received the message.",
+        },
         mode: {
           type: "string",
-          enum: ["draft", "open"],
-          description: "draft (default) or open. Sending is not available in this build.",
+          enum: ["draft", "open", "send"],
+          description: "draft (default), open or send (sends immediately — only when the user explicitly asked to send).",
           default: "draft",
         },
       },
@@ -343,9 +350,10 @@ export const tools = [
         to: args.to,
         body: args.body || "",
       };
+      if (args.from) payload.identityId = args.from;
       const mode = args.mode || "draft";
-      if (mode === "send") return ERRO_ENVIO_BLOQUEADO;
-      if (mode === "open") payload.open = true;
+      if (mode === "send") payload.send = true;
+      else if (mode === "open") payload.open = true;
       else payload.draft = true;
       return await api("POST", "/forward", payload);
     },

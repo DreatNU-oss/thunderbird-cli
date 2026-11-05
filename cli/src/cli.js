@@ -12,17 +12,12 @@ import { api, output, outputError, getConfig, parseRelativeDate, caminhoSeguroDe
 
 // ─── Travas pessoais ────────────────────────────────────────────────
 //
-// Versão pessoal: enviar e-mail direto, apagar em definitivo e apagar
-// pastas não existem. A barreira final está em extension/src/background.js;
-// estas aqui só garantem uma mensagem clara. Ver AUDITORIA.md.
-
-const ERRO_ENVIO_BLOQUEADO = {
-  message:
-    "Esta versão nunca envia e-mail sozinha. Nada foi enviado. " +
-    "Rode sem --send: a mensagem fica em Rascunhos para você revisar " +
-    "e enviar pelo Thunderbird.",
-  code: "ENVIO_BLOQUEADO",
-};
+// Versão pessoal: apagar em definitivo e apagar pastas não existem.
+// A barreira final está em extension/src/background.js; estas aqui só
+// garantem uma mensagem clara. Ver AUDITORIA.md.
+//
+// 04/11/2026: a trava de ENVIO foi retirada a pedido do André — --send
+// em compose/reply/forward envia de verdade.
 
 const ERRO_EXCLUSAO_PERMANENTE_BLOQUEADA = {
   message:
@@ -544,7 +539,7 @@ program
   .option("--header <key:value>", "custom header")
   .option("--draft", "save as draft (default)")
   .option("--open", "open compose window")
-  .option("--send", "BLOQUEADO nesta versão pessoal")
+  .option("--send", "envia na hora (só quando o dono pedir para enviar)")
   .action(run(async (opts) => {
     const g = program.opts();
     let body = opts.body || "";
@@ -567,10 +562,8 @@ program
 
     // Mode: send, open, or draft (default)
     if (opts.send) {
-      outputError(ERRO_ENVIO_BLOQUEADO, g.format);
-      return;
-    }
-    if (opts.open) {
+      payload.send = true;
+    } else if (opts.open) {
       payload.open = true;
     } else {
       payload.draft = true;
@@ -589,9 +582,10 @@ program
   .option("--body-file <path>", "read reply from file")
   .option("--all", "reply to all")
   .option("--html", "body is HTML")
+  .option("--from <identityId>", "identidade remetente (use a da conta que recebeu)")
   .option("--draft", "save as draft (default)")
   .option("--open", "open compose window")
-  .option("--send", "BLOQUEADO nesta versão pessoal")
+  .option("--send", "envia na hora (só quando o dono pedir para enviar)")
   .action(run(async (messageId, opts) => {
     const g = program.opts();
     let body = opts.body || "";
@@ -605,12 +599,11 @@ program
       body,
       replyAll: opts.all || false,
     };
+    if (opts.from) payload.identityId = opts.from;
 
     if (opts.send) {
-      outputError(ERRO_ENVIO_BLOQUEADO, g.format);
-      return;
-    }
-    if (opts.open) {
+      payload.send = true;
+    } else if (opts.open) {
       payload.open = true;
     } else {
       payload.draft = true;
@@ -627,9 +620,10 @@ program
   .description("Forward a message")
   .requiredOption("--to <address>", "forward to")
   .option("--body <text>", "additional text")
+  .option("--from <identityId>", "identidade remetente (use a da conta que recebeu)")
   .option("--draft", "save as draft (default)")
   .option("--open", "open compose window")
-  .option("--send", "BLOQUEADO nesta versão pessoal")
+  .option("--send", "envia na hora (só quando o dono pedir para enviar)")
   .action(run(async (messageId, opts) => {
     const g = program.opts();
     const payload = {
@@ -637,12 +631,11 @@ program
       to: opts.to,
       body: opts.body || "",
     };
+    if (opts.from) payload.identityId = opts.from;
 
     if (opts.send) {
-      outputError(ERRO_ENVIO_BLOQUEADO, g.format);
-      return;
-    }
-    if (opts.open) {
+      payload.send = true;
+    } else if (opts.open) {
       payload.open = true;
     } else {
       payload.draft = true;

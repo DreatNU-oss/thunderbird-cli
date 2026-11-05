@@ -88,14 +88,20 @@ Isso é perigoso não por si só, mas porque **gera falsa confiança**: alguém 
 >
 > Mitigações que continuam de pé: a ponte só existe quando ele a sobe manualmente; o Thunderbird precisa estar aberto; o envio na prática passa por `scripts/enviar-talita.mjs`, que roda em simulação por padrão e só envia com `--enviar`. Meio-termo já desenhado, caso um dia se queira parte da proteção de volta sem perder a funcionalidade: **lista de destinatários permitidos** dentro da extensão — envio liberado só para endereços escritos à mão num arquivo, bloqueado para todo o resto.
 
+> ⚠️ **Atualização de 04/11/2026 — a trava de envio acabou também nas camadas de cima.** Em 03/09 ela caiu só na extensão; o CLI e o servidor MCP continuaram recusando `--send` / `mode:"send"`, de modo que o agente não conseguia enviar nem pedindo. A pedido do André, essas duas camadas foram liberadas: saíram as seis linhas `ERRO_ENVIO_BLOQUEADO` de `cli/src/cli.js` e `mcp/src/tools.js`, e o modo `send` voltou aos esquemas das ferramentas `email_compose`, `email_reply` e `email_forward`. Ele escolheu a opção "liberar para qualquer destinatário" depois de ver a alternativa da lista de permitidos. **Hoje uma ordem de envio dita na conversa envia de verdade, para qualquer endereço, sem conferência humana.**
+>
+> O custo, dito a ele antes da decisão: era o rascunho que forçava um olhar humano antes de a mensagem sair. O caso Doctuz de 04/11/2026 é o exemplo — a resposta saiu da identidade errada (Yahoo em vez do `@me.com` do cadastro de acionistas) e só não virou problema porque a janela de composição foi aberta e revista. Com envio direto, esse mesmo erro sai pela rede.
+>
+> Mitigação acrescentada no mesmo dia: `email_reply` e `email_forward` (MCP) e `reply`/`forward` (CLI) passaram a aceitar `from`/`--from`, para que o remetente seja escolhido explicitamente em vez de herdar a identidade padrão, que é a do Yahoo. Regra de trabalho registrada na memória do projeto: **responder sempre pela conta que recebeu o original**. O padrão de todas as rotas continua sendo rascunho; `send` é sempre explícito. As travas de exclusão permanente e de exclusão de pasta seguem ativas.
+
 ### 5. Pontos de escrita e destruição — mapa completo
 
 **Enviar e-mail (sai da máquina via SMTP):**
 | Rota | Arquivo | Proteção | Burlável? |
 |---|---|---|---|
-| `/compose` com `send:true` | `background.js:466` | Padrão é rascunho; enviar exige pedir `mode:"send"`/`--send` | **Sim**, é só passar a flag. Sem bloqueio rígido. |
-| `/reply` com `send:true` | `background.js:488` | idem | **Sim** |
-| `/forward` com `send:true` | `background.js:510` | idem | **Sim** |
+| `/compose` com `send:true` | `background.js:511` | Padrão é rascunho; enviar exige pedir `mode:"send"`/`--send` | **Sim**, é só passar a flag. Sem bloqueio rígido, nas três camadas, desde 04/11/2026. |
+| `/reply` com `send:true` | `background.js:540` | idem | **Sim** |
+| `/forward` com `send:true` | `background.js:562` | idem | **Sim** |
 
 **Apagar (perda de dados):**
 | Rota | Arquivo | Proteção | Burlável? |
@@ -163,7 +169,7 @@ O nome do arquivo de um anexo é escolhido por **quem envia o e-mail**, e o cód
 | SEC-04 — sem defesa de dados contra prompt injection | ⚠️ **continua assim.** A defesa é o julgamento do agente + as regras do `SKILL.md` |
 | SEC-05 — CORS aberto | ✅ CORS removido; `Origin`/`Referer` recusados; `Host` validado |
 | SEC-06 — CVEs em dependências | ✅ 0 vulnerabilidades |
-| SEC-07 — envio direto e exclusão permanente existiam | ✅ removidos; exclusão de pasta também |
+| SEC-07 — envio direto e exclusão permanente existiam | ⚠️ **envio direto voltou** a pedido do André (extensão em 03/09/2026, CLI e MCP em 04/11/2026); exclusão permanente e de pasta seguem removidas |
 | SEC-08 — escape de pasta em anexos | ✅ corrigido |
 
 **Risco residual conhecido:** a porta WebSocket (7701), por onde a extensão conversa com a ponte, **não** exige token — a extensão não teria onde guardar um segredo que outro programa da máquina não pudesse ler. Mitigação aplicada: só uma extensão conectada por vez, então um programa hostil não consegue tomar o lugar da extensão do Thunderbird enquanto ela estiver conectada. Se ele conectar **antes** do Thunderbird, a extensão real é recusada e você vê o erro — falha visível, não comprometimento silencioso.

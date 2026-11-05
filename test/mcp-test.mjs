@@ -26,6 +26,7 @@ const failures = [];
 // Envios que chegaram à ponte simulada. Ela envia como a extensão real desde
 // 03/09/2026 (commit 924a64e); a recusa de envio vive no servidor MCP.
 const enviosNaPonte = [];
+const identidadesNaPonte = [];
 
 // ─── Mock bridge handler ───────────────────────────────────────────
 
@@ -128,6 +129,7 @@ function handle({ method, path, body }) {
   if (path === "/messages/update") return { success: true };
   // Como a extensão real desde 03/09: com send, envia.
   if (path === "/compose" || path === "/reply" || path === "/forward") {
+    if (body?.identityId) identidadesNaPonte.push(body.identityId);
     if (body?.send) {
       enviosNaPonte.push(path);
       return { success: true, action: "sent" };
@@ -409,9 +411,9 @@ test(
   (r) => r.success && r.action === "draft_saved"
 );
 test(
-  "email_compose send BLOQUEADO",
+  "email_compose send envia",
   await client.callTool("email_compose", { to: "a@b.com", body: "Hi", mode: "send" }),
-  (r) => r.code === "ENVIO_BLOQUEADO" && !r.success
+  (r) => r.success && r.action === "sent"
 );
 test(
   "email_compose open",
@@ -425,16 +427,25 @@ test(
   (r) => r.success
 );
 test(
-  "email_reply send BLOQUEADO",
+  "email_reply send envia",
   await client.callTool("email_reply", { messageId: 1, body: "Thanks", mode: "send" }),
-  (r) => r.code === "ENVIO_BLOQUEADO" && !r.success
+  (r) => r.success && r.action === "sent"
 );
 test(
-  "email_forward send BLOQUEADO",
-  await client.callTool("email_forward", { messageId: 1, to: "c@d.com", mode: "send" }),
-  (r) => r.code === "ENVIO_BLOQUEADO" && !r.success
+  "email_reply leva a identidade de 'from' para a ponte",
+  await client.callTool("email_reply", { messageId: 1, body: "Thanks", from: "id2" }),
+  (r) => r.success && identidadesNaPonte.includes("id2")
 );
-test("nenhum envio chegou à ponte pelo MCP", enviosNaPonte, (e) => e.length === 0);
+test(
+  "email_forward send envia",
+  await client.callTool("email_forward", { messageId: 1, to: "c@d.com", mode: "send" }),
+  (r) => r.success && r.action === "sent"
+);
+test(
+  "os tres envios chegaram à ponte pelo MCP",
+  enviosNaPonte,
+  (e) => e.length === 3 && e.includes("/compose") && e.includes("/reply") && e.includes("/forward")
+);
 
 test(
   "email_forward",
@@ -488,9 +499,14 @@ test(
   (s) => !s.properties.permanent && !s.properties.confirm
 );
 test(
-  "email_compose nao expoe mais o modo 'send' no schema",
+  "email_compose expoe o modo 'send' no schema (liberado em 04/11/2026)",
   await client.listToolSchema("email_compose"),
-  (s) => !s.properties.mode.enum.includes("send")
+  (s) => s.properties.mode.enum.includes("send")
+);
+test(
+  "email_reply expoe 'from' e o modo 'send' no schema",
+  await client.listToolSchema("email_reply"),
+  (s) => !!s.properties.from && s.properties.mode.enum.includes("send")
 );
 
 test(

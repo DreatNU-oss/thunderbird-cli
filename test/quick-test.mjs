@@ -22,6 +22,7 @@ let passed = 0, failed = 0;
 // O envio foi liberado lá em 03/09/2026 (commit 924a64e): a ponte simulada
 // envia, como a extensão real, e anota cada envio que recebe.
 const enviosNaPonte = [];
+const identidadesNaPonte = [];
 const BLOQUEIO_PERMANENTE = { error: "EXCLUSAO_PERMANENTE_BLOQUEADA: esta versão nunca apaga em definitivo.", code: "EXCLUSAO_PERMANENTE_BLOQUEADA" };
 const BLOQUEIO_PASTA = { error: "EXCLUSAO_DE_PASTA_BLOQUEADA: esta versão nunca apaga pastas.", code: "EXCLUSAO_DE_PASTA_BLOQUEADA" };
 
@@ -57,6 +58,7 @@ function handle({ method, path, body }) {
   if (path === "/tags/create") return { success: true, ...body };
   // Como a extensão real desde 03/09: com send, envia.
   if (path === "/compose" || path === "/reply" || path === "/forward") {
+    if (body?.identityId) identidadesNaPonte.push(body.identityId);
     if (body?.send) { enviosNaPonte.push(path); return { success: true, action: "sent" }; }
     return { success: true, action: body?.open ? "draft_opened" : "draft_saved" };
   }
@@ -200,14 +202,17 @@ test("POST /reply", await httpCall("POST", "/reply", { messageId: 1, body: "Than
 test("POST /forward", await httpCall("POST", "/forward", { messageId: 1, to: "c@d", body: "FYI" }), r => r.success);
 
 console.log("\n\x1b[1mTravas pessoais (Fase 4)\x1b[0m");
-// A extensão envia desde 03/09; a trava de envio que sobrou vive no CLI (e no
-// servidor MCP, ver mcp-test.mjs). O controle prova que o CLI alcança a ponte;
-// sem ele, "nenhum envio chegou" passaria até com o CLI desconectado.
+// A extensão envia desde 03/09 e o CLI desde 04/11/2026, a pedido do André:
+// --send envia de verdade. O padrão continua sendo rascunho — é isso que estes
+// testes protegem, junto com as travas de exclusão, que seguem ativas.
 test("CLI alcança a ponte (controle: compose sem --send vira rascunho)", await rodarCli(["compose", "--to", "a@b.com", "--subject", "Oi", "--body", "Oi"]), r => r.saida === 0 && r.json?.data?.action === "draft_saved");
-test("CLI recusa compose --send", await rodarCli(["compose", "--to", "a@b.com", "--subject", "Oi", "--body", "Oi", "--send"]), r => r.saida === 1 && r.json?.code === "ENVIO_BLOQUEADO");
-test("CLI recusa reply --send", await rodarCli(["reply", "1", "--body", "Oi", "--send"]), r => r.saida === 1 && r.json?.code === "ENVIO_BLOQUEADO");
-test("CLI recusa forward --send", await rodarCli(["forward", "1", "--to", "c@d.com", "--send"]), r => r.saida === 1 && r.json?.code === "ENVIO_BLOQUEADO");
-test("nenhum envio chegou à ponte pelo CLI", enviosNaPonte, e => e.length === 0);
+test("CLI reply sem --send continua rascunho", await rodarCli(["reply", "1", "--body", "Oi"]), r => r.saida === 0 && r.json?.data?.action !== "sent");
+test("CLI forward sem --send continua rascunho", await rodarCli(["forward", "1", "--to", "c@d.com"]), r => r.saida === 0 && r.json?.data?.action !== "sent");
+test("CLI compose --send envia", await rodarCli(["compose", "--to", "a@b.com", "--subject", "Oi", "--body", "Oi", "--send"]), r => r.saida === 0 && r.json?.data?.action === "sent");
+test("CLI reply --send envia", await rodarCli(["reply", "1", "--body", "Oi", "--send"]), r => r.saida === 0 && r.json?.data?.action === "sent");
+test("CLI forward --send envia", await rodarCli(["forward", "1", "--to", "c@d.com", "--send"]), r => r.saida === 0 && r.json?.data?.action === "sent");
+test("CLI reply --from leva a identidade escolhida", await rodarCli(["reply", "1", "--body", "Oi", "--from", "id2"]), r => r.saida === 0 && identidadesNaPonte.includes("id2"));
+test("os tres envios chegaram à ponte", enviosNaPonte, e => e.length === 3 && e.includes("/compose") && e.includes("/reply") && e.includes("/forward"));
 test("exclusao permanente bloqueada", await httpCall("POST", "/messages/delete", { messageIds: [1], permanent: true }), r => r.code === "EXCLUSAO_PERMANENTE_BLOQUEADA" && !r.success);
 test("delete normal vai para a Lixeira", await httpCall("POST", "/messages/delete", { messageIds: [1] }), r => r.success && r.destino === "Lixeira");
 test("exclusao de pasta bloqueada", await httpCall("POST", "/folders/delete", { folderId: "f1" }), r => r.code === "EXCLUSAO_DE_PASTA_BLOQUEADA" && !r.success);
