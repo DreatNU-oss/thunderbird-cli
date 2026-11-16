@@ -162,6 +162,12 @@ Automático sem valor de arquivo.
 - Mercado Livre (10 endereços diferentes)
 - Alertas de segurança e avisos de login genéricos
 - Corine – 4Medic
+- `crm.f1saopaulo.com.br` (F1 São Paulo — venda de ingressos)
+- `global.avenue.us` (Avenue — promoção de pontos)
+
+**Decisão do André em 16/11/2026:** as duas últimas linhas entraram depois da
+primeira rodada do vigia, em que ele respondeu "lixeira o 13 e o 14". São
+disparo de marketing por domínio próprio, sem conflito com o "nunca tocar".
 
 > ⚠️ **Na conta da clínica, a lixeira é `[Gmail]/Lixeira`**, não `/Trash`. A
 > `/Trash` que o Thunderbird criou é tratada pelo Gmail como etiqueta comum, e o
@@ -196,6 +202,40 @@ Remetentes: `noreply-nfse@el.com.br` · `noreply@nfe-cidades.com.br` ·
 > As pastas `/NF`, `/NF ESA`, `/Prefeitura NF`, `/NF Unimed`, `/NF PM` e
 > `/Murad contab` **não se tocam**. Elas guardam a *conversa sobre* emitir nota,
 > não a nota automática — categorias diferentes, separadas de propósito.
+
+---
+
+## Resgate de spam — procurar o que NÃO é spam
+
+Acrescentado em 16/11/2026, a pedido do André. Antes disso o vigia só
+*descartava* o que já estava numa pasta de spam, por considerar que já tinha
+sido tratado. Isso estava errado: a medição da sua caixa mostrou que **36% do
+que está nas pastas de spam é legítimo** — na semana de 14/09/2026 o Thunderbird
+marcou 52 de 92 mensagens, inclusive Unimed, XP e Claro.
+
+Pastas a olhar, a cada rodada: `/Bulk` (Yahoo), `[Gmail]/Spam` (clínica e garb).
+O iCloud não tem pasta de lixo eletrônico; nessa conta, olhe os últimos 7 dias
+da `/Trash`.
+
+**Quem decide continua sendo o remetente.** O corpo da mensagem serve só para
+escrever o relatório, nunca para resgatar.
+
+1. **Resgate automático** (volta para a Entrada da própria conta): somente
+   remetentes das listas **"nunca tocar"** — transacionais, preservados e
+   pessoas. Isso é a precedência nº 1 deste arquivo aplicada ao contrário: se
+   "nunca tocar" vence uma lista de descarte, vence também o filtro de spam.
+2. **Fica onde está, mas entra no relatório** numerado, na seção
+   `🟢 PODE NÃO SER SPAM`: todo remetente que **não** está na lista de Spam
+   deste arquivo. Você responde "resgata o 4" e o vigia move.
+3. **Não entra no relatório**: remetente que está na lista de Spam. Esse é spam
+   por decisão sua e fica quieto.
+
+Em `modo: seco` nada se move, nem o resgate automático: o relatório diz o que
+teria sido resgatado.
+
+Mensagem de pessoa que caiu no spam é o caso mais importante desta seção.
+Qualquer remetente que não pareça sistema automático vai para o relatório mesmo
+que não esteja em lista nenhuma.
 
 ---
 
