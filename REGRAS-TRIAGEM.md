@@ -9,7 +9,7 @@ Está no Git, então toda alteração fica registrada e dá para voltar atrás.
 ## Modo de operação
 
 ```
-modo: seco
+modo: real
 ```
 
 - **`seco`** — ele só relata o que *faria*. Não move nada. É como começamos.
@@ -159,15 +159,32 @@ e o risco de acertar o alvo errado é maior que o ganho.
 Automático sem valor de arquivo.
 
 - Faturas Claro e Vivo (10 endereços diferentes — casar pelo domínio raiz)
-- Mercado Livre (10 endereços diferentes)
 - Alertas de segurança e avisos de login genéricos
 - Corine – 4Medic
 - `crm.f1saopaulo.com.br` (F1 São Paulo — venda de ingressos)
 - `global.avenue.us` (Avenue — promoção de pontos)
+- `adiumpharma.com` (Adium Pharma — cursos e convites)
+- `mc.lilly.com` (Eli Lilly — webinars e convites)
 
 **Decisão do André em 16/11/2026:** as duas últimas linhas entraram depois da
 primeira rodada do vigia, em que ele respondeu "lixeira o 13 e o 14". São
 disparo de marketing por domínio próprio, sem conflito com o "nunca tocar".
+
+**Decisão do André em 17/11/2026, rodada das 6h:**
+
+- **Entraram** `adiumpharma.com` e `mc.lilly.com`. Ele mandou "lixeira o 9, o 10
+  e o 13"; são convite e curso por domínio próprio, sem conflito com o "nunca
+  tocar".
+- **Não entraram**, de propósito: Afya/Whitebook (`pebmed.com.br`) e Amazon
+  (`store-news@amazon.com.br`). Ele jogou as duas na Lixeira nesta rodada, mas
+  quis decidir caso a caso. No caso da Amazon isso é também segurança: por
+  domínio raiz, `amazon.com.br` levaria confirmação de pedido e aviso de entrega.
+- **SAIU o Mercado Livre.** Estava aqui desde a faxina; na primeira rodada em
+  modo real a regra mandou para a Lixeira, junto da propaganda, a confirmação de
+  uma compra e o aviso de que a NF-e estava disponível. Separar as duas coisas
+  exigiria casar pelo texto do assunto, que é a armadilha 7 do
+  `CAIXAS-ESTADO.md`. Então **nada do Mercado Livre se move sozinho**: vai
+  numerado para o relatório e ele responde pelo número.
 
 > ⚠️ **Na conta da clínica, a lixeira é `[Gmail]/Lixeira`**, não `/Trash`. A
 > `/Trash` que o Thunderbird criou é tratada pelo Gmail como etiqueta comum, e o
