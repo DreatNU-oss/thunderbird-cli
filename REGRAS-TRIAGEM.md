@@ -165,6 +165,11 @@ Automático sem valor de arquivo.
 - `global.avenue.us` (Avenue — promoção de pontos)
 - `adiumpharma.com` (Adium Pharma — cursos e convites)
 - `mc.lilly.com` (Eli Lilly — webinars e convites)
+- `secad.com.br` (Secad Artmed — vouchers e cursos)
+- `auvp.com.br` (AUVP — curso de negócios)
+- `psplillymelhorparavoce.com.br` (programa "Lilly Melhor Para Você" — promoção)
+- `emkt.bluetree.com.br` (Blue Tree Hotels — promoções)
+- `heygen.com` (HeyGen — novidades do produto)
 
 **Decisão do André em 16/11/2026:** as duas últimas linhas entraram depois da
 primeira rodada do vigia, em que ele respondeu "lixeira o 13 e o 14". São
@@ -185,6 +190,14 @@ disparo de marketing por domínio próprio, sem conflito com o "nunca tocar".
   exigiria casar pelo texto do assunto, que é a armadilha 7 do
   `CAIXAS-ESTADO.md`. Então **nada do Mercado Livre se move sozinho**: vai
   numerado para o relatório e ele responde pelo número.
+
+**Decisão do André em 18/11/2026, depois da rodada das 6h:** ele mandou apagar
+toda a seção "O que faço com isto?" (itens 5 a 12) e escolheu, na pergunta com
+opções, que **só os de propaganda** viram regra: Secad, AUVP, o programa "Lilly
+Melhor Para Você", Blue Tree e HeyGen. **Ficaram fora de propósito** a Unimed
+Paraná (`secretaria@unimedpr.coop.br`), porque o sistema Unimed não se trata em
+bloco, e a Amazon Music (`msg.amazonmusic.com`), porque Amazon ele decide caso
+a caso. O CFM também não entra: a regra dele para CRM e CFM continua valendo.
 
 > ⚠️ **Na conta da clínica, a lixeira é `[Gmail]/Lixeira`**, não `/Trash`. A
 > `/Trash` que o Thunderbird criou é tratada pelo Gmail como etiqueta comum, e o
