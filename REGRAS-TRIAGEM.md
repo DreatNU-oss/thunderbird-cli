@@ -50,6 +50,17 @@ Verificados um a um por você durante a faxina. Nunca vão para spam nem lixeira
 | Google, GitHub, Microsoft | Códigos de verificação e segurança da conta |
 | Apple | Releases de aplicativo |
 | Murad, JF Gestta, Sercon | Contabilidade |
+| Soma Contabilidade: `somacontabilidadetc.com.br` e `acessorias.com` | Contabilidade atual: guias de imposto, holerites, documentos do portal |
+| `ssparisi.com` ("Banco On-Line") | Lançamentos da Soma com a Unicred Empresas, enviados a pedido do André |
+
+**Decisão do André em 19/11/2026:** a Soma e o "Banco On-Line" entraram aqui.
+O filtro do Thunderbird marca os dois como lixo eletrônico com frequência (em
+18/11, as 8 cópias das guias de PIS/COFINS, ISS, CSLL e IRPJ). Os e-mails do
+`ssparisi.com` tinham sido tratados como golpe imitando a Soma; o André
+corrigiu: é a equipe da Soma que manda, por pedido dele. Os 2 que estavam na
+Lixeira da clínica (16/11 e 18/11) voltaram para a Entrada no mesmo dia.
+O `acessorias.com` é o portal que a Soma usa; outra contabilidade que use o
+mesmo portal também fica protegida, o que só impede descarte, nunca move nada.
 
 ## Nunca tocar — preservados
 
