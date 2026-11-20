@@ -47,7 +47,7 @@ Verificados um a um por você durante a faxina. Nunca vão para spam nem lixeira
 | `brcondominio.com.br` | Boletos |
 | `sign@d4sign.com.br` | Documentos assinados |
 | `dse_na#@docusign.net` | Documentos assinados |
-| Google, GitHub, Microsoft | Códigos de verificação e segurança da conta |
+| Google, GitHub, Microsoft | Códigos de verificação e segurança da conta (exceção, decisão de 20/11/2026: `microsoftrewards.com` e `microsoftadvertising.com` são propaganda e vão para a Lixeira) |
 | Apple | Releases de aplicativo |
 | Murad, JF Gestta, Sercon | Contabilidade |
 | Soma Contabilidade: `somacontabilidadetc.com.br` e `acessorias.com` | Contabilidade atual: guias de imposto, holerites, documentos do portal |
@@ -181,6 +181,8 @@ Automático sem valor de arquivo.
 - `psplillymelhorparavoce.com.br` (programa "Lilly Melhor Para Você" — promoção)
 - `emkt.bluetree.com.br` (Blue Tree Hotels — promoções)
 - `heygen.com` (HeyGen — novidades do produto)
+- `microsoftrewards.com` (Microsoft Rewards — pontos e prêmios)
+- `microsoftadvertising.com` (Microsoft Advertising — webinars e anúncios)
 
 **Decisão do André em 16/11/2026:** as duas últimas linhas entraram depois da
 primeira rodada do vigia, em que ele respondeu "lixeira o 13 e o 14". São
@@ -209,6 +211,13 @@ Melhor Para Você", Blue Tree e HeyGen. **Ficaram fora de propósito** a Unimed
 Paraná (`secretaria@unimedpr.coop.br`), porque o sistema Unimed não se trata em
 bloco, e a Amazon Music (`msg.amazonmusic.com`), porque Amazon ele decide caso
 a caso. O CFM também não entra: a regra dele para CRM e CFM continua valendo.
+
+**Decisão do André em 20/11/2026, depois da rodada das 6h ("regra o 8"):**
+entraram `microsoftrewards.com` e `microsoftadvertising.com`. São domínios só de
+propaganda, e não conflitam com o "nunca tocar" da Microsoft, que protege os
+códigos de verificação e os alertas de segurança: esses chegam de
+`microsoft.com` e dos subdomínios dele (`accountprotection.microsoft.com`), que
+continuam intocáveis. Casar por estes dois domínios, nunca pelo nome "Microsoft".
 
 > ⚠️ **Na conta da clínica, a lixeira é `[Gmail]/Lixeira`**, não `/Trash`. A
 > `/Trash` que o Thunderbird criou é tratada pelo Gmail como etiqueta comum, e o
