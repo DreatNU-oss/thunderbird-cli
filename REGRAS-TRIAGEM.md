@@ -159,6 +159,13 @@ Apareceram nas pastas de spam, mas viraram regra seriam um estrago:
 em massa quanto a Fatura e o Demonstrativo de Repasse da clínica. Não há regra
 por domínio que separe os dois — então não se mexe, e vai para o relatório.
 
+**Subdomínios da Unimed TC vão em destaque no relatório** (decisão dele em
+24/11/2026). Remetente terminado em `.unimedtc.coop.br` (por exemplo
+`controladorianotas@hospital.unimedtc.coop.br`, que pede nota fiscal da Fusex
+e chega marcado como lixo eletrônico) não se move e entra em 🟡 PRECISA DE
+VOCÊ, com a conta e a nota "Unimed TC (subdomínio)". A vigia de hora em hora
+do Autorizador continua só com `@unimedtc.coop.br` exato.
+
 A cauda longa (50 domínios com 1 ou 2 mensagens) ficou de fora: pouco volume,
 e o risco de acertar o alvo errado é maior que o ganho.
 
