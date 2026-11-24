@@ -101,6 +101,15 @@ E, mais amplo: **qualquer mensagem que não seja claramente de um sistema
 automático não se move**, esteja a pessoa nesta lista ou não. Ela vai para o
 relatório.
 
+**Catia Naves (`catia@unimedtc.coop.br`) é prioridade** (decisão do André em
+24/11/2026: "Ela é muito importante. Nenhum e-mail da Cátia deve ir para
+lixo."). A cada rodada, e-mail dela que estiver marcado como lixo eletrônico
+tem a marca tirada (`junk: false`, sem mover de pasta) e, se estiver numa
+pasta de spam ou na Lixeira, volta para a Entrada da própria conta. No
+relatório ela entra sempre em 🔴 PRECISA DE VOCÊ — URGENTE, com a nota "Catia
+(prioridade)". O André escolheu também pô-la no Catálogo de Endereços do
+Thunderbird (clique dele), que impede o filtro de marcar como lixo quem está lá.
+
 ---
 
 ## Vão para Spam
