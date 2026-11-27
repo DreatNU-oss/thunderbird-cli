@@ -143,6 +143,13 @@ conflito. Casar pelo **domínio raiz** (o Acordo Certo usa 16 subdomínios).
 | `rtpd.com.br` | 5 |
 | `telediu.com.br` · `medpej.com.br` | 8 |
 | `metamail.com` · `magazinemedica.com.br` | 6 |
+| `servicodeentregas.com.br` ("CLARO") | — |
+
+**Decisão do André em 27/11/2026:** o `servicodeentregas.com.br` entrou aqui.
+Os e-mails chegam assinados "CLARO", mas o domínio não é da Claro — as faturas
+de verdade vêm dos domínios dela, que já estão na lista da Lixeira. Como o
+remetente não casava com nenhuma regra, ele reaparecia no relatório a cada
+rodada. Para reverter, basta apagar a linha.
 
 **Decisões do André em 03/09:** Dell, DocuSign e LinkedIn entram no spam. No caso
 do LinkedIn eu havia sugerido deixar de fora (mensagem de recrutador não é
