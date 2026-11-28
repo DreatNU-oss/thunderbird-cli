@@ -194,7 +194,7 @@ Automático sem valor de arquivo.
 
 - Faturas Claro e Vivo (10 endereços diferentes — casar pelo domínio raiz)
 - Alertas de segurança e avisos de login genéricos
-- Corine – 4Medic
+- `4medic.com.br` (4Medic — propaganda e cursos; antes era só "Corine – 4Medic")
 - `crm.f1saopaulo.com.br` (F1 São Paulo — venda de ingressos)
 - `global.avenue.us` (Avenue — promoção de pontos)
 - `adiumpharma.com` (Adium Pharma — cursos e convites)
@@ -206,6 +206,15 @@ Automático sem valor de arquivo.
 - `heygen.com` (HeyGen — novidades do produto)
 - `microsoftrewards.com` (Microsoft Rewards — pontos e prêmios)
 - `microsoftadvertising.com` (Microsoft Advertising — webinars e anúncios)
+
+**Decisão do André em 28/11/2026, rodada das 6h ("Sim, vira regra"):** a linha
+do 4Medic passou a casar pelo domínio `4medic.com.br`. Antes dizia só
+"Corine – 4Medic", um nome de pessoa, e por isso o robô não movia nada quando
+quem escrevia era outra pessoa da mesma empresa — a propaganda da Andress
+(`andress@4medic.com.br`) reaparecia no relatório a cada rodada, do mesmo jeito
+que o "CLARO" do `servicodeentregas.com.br` antes de 27/11. O domínio é só da
+4Medic e não conflita com nenhum "nunca tocar". Para reverter, basta apagar a
+linha.
 
 **Decisão do André em 16/11/2026:** as duas últimas linhas entraram depois da
 primeira rodada do vigia, em que ele respondeu "lixeira o 13 e o 14". São
