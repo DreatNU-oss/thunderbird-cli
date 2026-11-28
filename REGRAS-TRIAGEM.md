@@ -206,6 +206,18 @@ Automático sem valor de arquivo.
 - `heygen.com` (HeyGen — novidades do produto)
 - `microsoftrewards.com` (Microsoft Rewards — pontos e prêmios)
 - `microsoftadvertising.com` (Microsoft Advertising — webinars e anúncios)
+- `mail.perplexity.ai` (Perplexity — propaganda do produto; o domínio raiz `perplexity.ai` fica de fora de propósito)
+
+**Decisão do André em 28/11/2026, à tarde ("Lixeira + vira regra"):** entrou
+o `mail.perplexity.ai`. Nas quatro caixas há 7 mensagens da Perplexity desde
+25/11 e **todas** vêm de `team@mail.perplexity.ai`, todas na caixa garb e todas
+propaganda do produto; não existe nenhuma mensagem transacional da Perplexity
+(recibo, cobrança, segurança) em nenhuma das contas. A regra casa só o
+subdomínio de marketing, e não o domínio raiz `perplexity.ai`, pelo mesmo
+motivo do `microsoftrewards`/`microsoftadvertising` de 20/11: se um dia ele
+assinar o produto, o recibo não vai para a Lixeira. Se a propaganda voltar por
+outro subdomínio, basta alargar a linha para `perplexity.ai`. Para reverter,
+apagar a linha.
 
 **Decisão do André em 28/11/2026, rodada das 6h ("Sim, vira regra"):** a linha
 do 4Medic passou a casar pelo domínio `4medic.com.br`. Antes dizia só
